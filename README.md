@@ -37,11 +37,11 @@ Supabase
 
 ## 로컬 실행
 
-저장소를 받은 뒤 `kiosk` 폴더에서 정적 서버를 실행합니다. 별도 패키지 설치는 필요하지 않습니다.
+저장소를 받은 뒤 프로젝트 루트에서 정적 서버를 실행합니다. 별도 패키지 설치는 필요하지 않습니다.
 
 ```bash
-git clone https://github.com/koosamuel/snu-ai-agent.git
-cd snu-ai-agent/kiosk
+git clone https://github.com/koosamuel/cafe_kiosk.git
+cd cafe_kiosk
 python3 -m http.server 8000
 ```
 
@@ -83,10 +83,11 @@ Publishable Key는 RLS를 전제로 브라우저에서 사용하는 공개 식�
 
 공동 작업 규칙과 파일별 담당 범위는 `CONTRIBUTING.md`를 따릅니다. 팀원은 `main/kiosk`에서 직접 작업하며, 작업 시작과 push 직전에 `git pull --rebase origin main`으로 최신 변경을 반영합니다.
 
-`main/kiosk`에 변경이 push되면 GitHub Actions가 테스트와 정적 빌드를 수행하고 GitHub Pages에 자동 배포합니다.
+`main`에 변경이 push되면 GitHub Actions가 테스트와 정적 빌드를 수행하고 GitHub Pages에 자동 배포합니다.
 
-- 공개 주소: https://koosamuel.github.io/snu-ai-agent/kiosk/
-- 배포 워크플로: `.github/workflows/deploy-kiosk-pages.yml`
+- 공개 주소: https://koosamuel.github.io/cafe_kiosk/
+- 코드 저장소: https://github.com/koosamuel/cafe_kiosk
+- 배포 워크플로: `.github/workflows/deploy-pages.yml`
 
 ## 정적 배포 결과 생성
 
