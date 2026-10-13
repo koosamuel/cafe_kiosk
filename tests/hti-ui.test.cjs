@@ -8,6 +8,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const menu = JSON.parse(fs.readFileSync(path.join(root, "menu.json"), "utf8"));
+const officialCatalog = JSON.parse(fs.readFileSync(path.join(root, "reference", "starbucks-official-menu-2026-10-14.json"), "utf8"));
 const plan = fs.readFileSync(path.join(root, "03_구현계획.md"), "utf8");
 const buildScript = fs.readFileSync(path.join(root, "scripts", "build-static.sh"), "utf8");
 
@@ -76,6 +77,8 @@ test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이�
   assert.ok(html.indexOf('class="assistant-panel') < html.indexOf('class="cart-panel"'));
   assert.ok(html.indexOf('class="page-tabs header-page-tabs"') < html.indexOf('id="fullscreenButton"'));
   assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
+  assert.match(css, /\.assistant-panel \{[^}]*height: calc\(100vh - 124px\)/);
+  assert.match(css, /\.cart-panel \{[\s\S]*height: calc\(100vh - 124px\)/);
 });
 
 test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배치한다", () => {
@@ -85,8 +88,9 @@ test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배�
   assert.match(html, /id="categoryTabs"[^>]+toolbar-category-tabs/);
 });
 
-test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 주문 도우미 입력을 채운다", () => {
-  assert.match(app, /data-chat-menu-id=/);
+test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 옵션 선택을 연다", () => {
+  assert.match(app, /data-menu-option-id=/);
+  assert.doesNotMatch(app, /data-chat-menu-id=/);
   assert.doesNotMatch(app, /data-add-menu-id=/);
   assert.match(app, /class="menu-card-image"/);
   assert.doesNotMatch(app, /class="badge"/);
@@ -94,12 +98,11 @@ test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 주�
   assert.doesNotMatch(app, /class="add-symbol"/);
   assert.match(css, /\.menu-grid \{[^}]*grid-template-columns: repeat\(3,/);
   assert.match(css, /\.menu-card-image \{[^}]*width: min\(100%, 210px\)/);
-  assert.match(app, /function prefillRagInput\(itemId\)/);
-  assert.match(app, /input\.value = itemName\(item\)/);
-  assert.match(app, /prefillRagInput\(chatButton\.dataset\.chatMenuId\)/);
+  assert.doesNotMatch(app, /function prefillRagInput\(itemId\)/);
+  assert.match(app, /openOptions\(optionButton\.dataset\.menuOptionId\)/);
 });
 
-test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한다", () => {
+test("12개 주문 메뉴와 공식 316개 카탈로그 감사를 구분한다", () => {
   assert.match(app, /const menuImageSources =/);
   assert.match(app, /class="menu-card-image"/);
   assert.match(html, /스타벅스 코리아 공식 메뉴/);
@@ -107,6 +110,11 @@ test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한�
   menu.items.forEach((item) => {
     assert.ok(fs.existsSync(path.join(root, "assets", "menu", `${item.id}.jpg`)), `${item.id} image is missing`);
   });
+  assert.equal(officialCatalog.counts.total, 316);
+  assert.equal(officialCatalog.counts.drink, 198);
+  assert.equal(officialCatalog.counts.food, 118);
+  assert.equal(officialCatalog.counts.with_image, 316);
+  assert.equal(officialCatalog.counts.with_official_price, 0);
   assert.match(buildScript, /cp -R "\$PROJECT_DIR\/assets\/\." "\$STAGING_DIR\/assets\/"/);
 });
 

@@ -321,6 +321,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   top: 100px;
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 124px);
   max-height: calc(100vh - 124px);
   padding: 26px;
   border: 1px solid rgba(74, 55, 42, .12);
@@ -383,9 +384,9 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .close-button { position: absolute; top: 18px; right: 18px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 24px; cursor: pointer; }
 .rag-modal { width: min(760px, calc(100% - 28px)); padding: 0; overflow: hidden; }
 .rag-inline { width: 100%; margin: 0 0 28px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); font-size: 70%; }
-.assistant-panel { position: sticky; top: 100px; align-self: start; max-height: calc(100vh - 124px); margin: 0; }
-.rag-inline .rag-shell { max-height: none; }
-.rag-inline .rag-messages { min-height: 220px; max-height: 360px; }
+.assistant-panel { position: sticky; top: 100px; align-self: start; height: calc(100vh - 124px); max-height: calc(100vh - 124px); margin: 0; }
+.rag-inline .rag-shell { height: 100%; max-height: none; }
+.rag-inline .rag-messages { min-height: 220px; max-height: none; }
 .rag-inline .rag-heading h2 { font-size: 2.1em; }
 .rag-inline .rag-statusbar, .rag-inline .rag-statusbar button, .rag-inline .rag-prompts button, .rag-inline .rag-notice { font-size: 1em; }
 .rag-inline .rag-message-label { font-size: .8em; }
@@ -473,7 +474,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 
 @media (max-width: 1280px) {
   .kiosk-shell { grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); padding: 24px; }
-  .cart-panel { position: static; grid-column: 1 / -1; max-height: none; }
+  .cart-panel { position: static; grid-column: 1 / -1; height: auto; max-height: none; }
 }
 
 @media (max-width: 820px) {
@@ -483,7 +484,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .header-page-tabs { margin-right: auto; }
   .connection-status { display: none; }
   .kiosk-shell { display: block; padding: 20px 16px 160px; }
-  .assistant-panel { position: static; max-height: none; margin: 24px 0; }
+  .assistant-panel { position: static; height: auto; max-height: none; margin: 24px 0; }
   .welcome-row { align-items: start; flex-direction: column; }
   .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cart-panel {
