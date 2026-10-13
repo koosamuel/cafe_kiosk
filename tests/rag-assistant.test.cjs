@@ -99,6 +99,21 @@ test("짧은 후속 답변은 최근 사용자 문맥을 사용한다", () => {
   assert.match(query, /아메리카노/);
 });
 
+test("메뉴 선택 뒤 따로 입력한 주문 의사를 같은 문맥으로 연결한다", () => {
+  const history = [
+    { role: "user", text: "아메리카노" },
+    { role: "assistant", text: "아메리카노는 3,500원입니다." },
+  ];
+  const query = assistant.conversationQuery("주문할게", history);
+  assert.equal(query, "아메리카노 주문할게");
+
+  const result = assistant.respond({ message: "주문할게", items, options: groupedOptions, cart: [], history });
+  assert.equal(result.intent, "clarify");
+  assert.equal(result.action.type, "pending");
+  assert.equal(result.action.itemId, "americano");
+  assert.deepEqual(result.action.missingGroups, ["온도", "크기"]);
+});
+
 test("전체 취소는 장바구니 초기화 동작을 반환한다", () => {
   const result = assistant.respond({ message: "장바구니 전부 비워 줘", items, cart: [] });
   assert.deepEqual(result.action, { type: "clear" });

@@ -403,7 +403,7 @@ function renderMenu() {
     const focusClass = focusIndex >= 0 ? `rag-focused rag-focus-${state.ragFocusLevel}` : "";
     return `
     <article class="menu-card ${focusClass}" data-menu-id="${escapeHtml(item.id)}">
-      <button class="menu-card-select" type="button" data-menu-order-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 채팅 주문 시작`, `Start a chat order for ${itemName(item)}`))}">
+      <button class="menu-card-select" type="button" data-menu-selection-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 메뉴 보기`, `View ${itemName(item)}`))}">
         ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
         <span class="menu-card-copy">
           <h3>${escapeHtml(itemName(item))}</h3>
@@ -545,7 +545,7 @@ function renderCart() {
   $("#cartCount").textContent = count;
   $(".cart-heading").dataset.mobileLabel = count ? tr(`${count}개 메뉴`, `${count} item${count === 1 ? "" : "s"}`) : tr("장바구니가 비었어요", "Cart is empty");
   $("#cartItems").innerHTML = state.cart.length ? state.cart.map((entry) => `
-    <article class="cart-item">
+    <article class="cart-item" data-cart-edit="${escapeHtml(entry.key)}">
       <button class="cart-item-head cart-item-edit" type="button" data-cart-edit="${escapeHtml(entry.key)}" aria-label="${escapeHtml(tr(`${entry.item.name} 옵션 수정`, `Edit options for ${itemName(entry.item)}`))}">
         <div><h3>${escapeHtml(itemName(entry.item))}</h3><p>${escapeHtml(entry.options.map(optionName).join(" · ") || tr("기본", "Default"))}</p></div>
         <strong>${won(entry.unitPrice * entry.quantity)}</strong>
@@ -850,7 +850,7 @@ function appendRagMessage(role, text, retrieved = []) {
     <span class="rag-message-label">${role === "user" ? tr("나", "You") : tr("주문 도우미", "Order Assistant")}</span>
     <p>${escapeHtml(text)}</p>
     ${retrieved.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${retrieved.map((item) => `
-      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 주문 선택`, `Select ${itemName(item)} to order`))}">
+      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 메뉴 보기`, `View ${itemName(item)}`))}">
         <span>${escapeHtml(itemName(item))}</span><strong>${won(item.price)}</strong>
       </button>`).join("")}</div>` : ""}`;
   const messages = $("#ragMessages");
@@ -1065,10 +1065,10 @@ function submitRagMessage(event) {
   }
 }
 
-function submitMenuOrder(itemId) {
+function submitMenuSelection(itemId) {
   const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
   if (!item || state.ragSending) return;
-  $("#ragInput").value = tr(`${item.name} 주문할게`, `Order ${itemName(item)}`);
+  $("#ragInput").value = itemName(item);
   $("#ragForm").requestSubmit();
 }
 
@@ -1145,8 +1145,8 @@ $("#categoryTabs").addEventListener("click", (event) => {
 });
 
 $("#menuGrid").addEventListener("click", (event) => {
-  const orderButton = event.target.closest("[data-menu-order-id]");
-  if (orderButton) submitMenuOrder(orderButton.dataset.menuOrderId);
+  const selectionButton = event.target.closest("[data-menu-selection-id]");
+  if (selectionButton) submitMenuSelection(selectionButton.dataset.menuSelectionId);
 });
 
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
@@ -1162,14 +1162,16 @@ $("#increaseQuantity").addEventListener("click", () => { state.optionQuantity = 
 $("#optionForm").addEventListener("submit", (event) => { event.preventDefault(); addActiveItemToCart(); });
 
 $("#cartItems").addEventListener("click", (event) => {
+  const actionButton = event.target.closest("[data-cart-action]");
+  if (actionButton) {
+    updateCartItem(actionButton.dataset.cartKey, actionButton.dataset.cartAction);
+    return;
+  }
   const editButton = event.target.closest("[data-cart-edit]");
   if (editButton) {
     const entry = state.cart.find((candidate) => candidate.key === editButton.dataset.cartEdit);
     if (entry) openOptions(entry.item.id, entry.key);
-    return;
   }
-  const button = event.target.closest("[data-cart-action]");
-  if (button) updateCartItem(button.dataset.cartKey, button.dataset.cartAction);
 });
 
 $("#checkoutButton").addEventListener("click", openCheckout);
@@ -1208,7 +1210,7 @@ $(".rag-prompts").addEventListener("click", (event) => {
 $("#ragMessages").addEventListener("click", (event) => {
   const button = event.target.closest("[data-rag-menu-id]");
   if (!button) return;
-  submitMenuOrder(button.dataset.ragMenuId);
+  submitMenuSelection(button.dataset.ragMenuId);
 });
 $("#staffOrders").addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");
@@ -1239,7 +1241,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=46").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=47").catch(console.error));
 
 renderCart();
 applyLanguage();
