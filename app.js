@@ -392,18 +392,14 @@ function renderMenu() {
   const selectedCategory = state.categories.find((category) => category.id === state.category);
   $("#categoryTitle").textContent = selectedCategory?.id === "all" ? tr("전체 메뉴", "All Menu") : selectedCategory ? (state.language === "en" ? categoryEnglish[selectedCategory.id] || selectedCategory.name : categoryKorean[selectedCategory.id] || selectedCategory.name) : tr("메뉴", "Menu");
   $("#menuGrid").innerHTML = visible.length ? visible.map((item) => `
-    <article class="menu-card ${menuImageSources[item.id] ? "has-image" : ""} ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" data-menu-id="${escapeHtml(item.id)}" style="--accent:${categoryColors[item.category_id] || "#2f4a3b"}">
+    <article class="menu-card ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" data-menu-id="${escapeHtml(item.id)}">
       <button class="menu-card-select" type="button" data-chat-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 주문 도우미에 입력`, `Enter ${itemName(item)} in the order assistant`))}">
         ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
         <span class="menu-card-copy">
-          ${item.badge ? `<span class="badge">${escapeHtml(state.language === "en" && item.badge === "추천" ? "Recommended" : item.badge)}</span>` : `<span class="badge" aria-hidden="true">MENU</span>`}
-          <span class="category-dot" style="background:var(--accent)"></span>
           <h3>${escapeHtml(itemName(item))}</h3>
-          <p>${escapeHtml(itemDescription(item))}</p>
           <strong>${won(item.price)}</strong>
         </span>
       </button>
-      <button class="add-symbol" type="button" data-add-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 옵션 선택`, `Choose options for ${itemName(item)}`))}">＋</button>
     </article>
   `).join("") : `<div class="menu-empty"><strong>${tr("검색 결과가 없습니다.", "No results found.")}</strong><br />${tr("다른 메뉴 이름을 입력해 보세요.", "Try another menu name.")}</div>`;
 }
@@ -792,46 +788,8 @@ function lockStaffBoard({ closeDialog = true } = {}) {
   if (closeDialog && $("#staffDialog").open) $("#staffDialog").close();
 }
 
-function clearRagFocus({ hideEvidence = false } = {}) {
+function clearRagFocus() {
   state.ragFocusedMenuIds = [];
-  if (hideEvidence) {
-    $("#ragEvidence").hidden = true;
-    $("#ragEvidenceItems").innerHTML = "";
-  }
-}
-
-function ragMatchReason(result, item, message) {
-  const query = String(message || "").toLocaleLowerCase("ko-KR");
-  if (result.intent === "compare") return tr("같은 기준으로 비교한 판매 메뉴", "Available item included in the comparison");
-  if (result.intent === "price") return tr("카탈로그 기본가와 적용 가능한 옵션", "Catalog base price and available options");
-  if (result.intent === "menu_list") return tr("현재 판매 중인 메뉴", "Currently available menu item");
-  if (result.intent === "safety") return tr("원재료·알레르기 정보는 직원 확인 필요", "Ask staff to verify ingredients and allergens");
-  if (/카페인|디카페인|caffeine/u.test(query)) return tr("요청한 카페인 조건과 연결된 후보", "Candidate related to the caffeine request");
-  if (/달|sweet/u.test(query)) return tr("요청한 단맛 조건과 연결된 후보", "Candidate related to the sweetness request");
-  if (/상큼|산뜻|청량|refresh/u.test(query)) return tr("요청한 산뜻한 맛과 연결된 후보", "Candidate related to the refreshing flavor request");
-  if (/어울|페어링|pair/u.test(query)) return tr("요청한 음식과의 페어링 후보", "Pairing candidate for the requested food");
-  return itemDescription(item);
-}
-
-function renderRagEvidence(result, message, items) {
-  const evidence = $("#ragEvidence");
-  if (!items.length) {
-    evidence.hidden = true;
-    $("#ragEvidenceItems").innerHTML = "";
-    return;
-  }
-
-  $("#ragEvidenceCount").textContent = tr(`${items.length}개 결과`, `${items.length} result${items.length === 1 ? "" : "s"}`);
-  $("#ragEvidenceItems").innerHTML = items.slice(0, 4).map((item) => {
-    const optionLabels = applicableOptions(item).slice(0, 5).map((option) => `${optionName(option)}${Number(option.price_delta || 0) ? ` +${won(option.price_delta)}` : ""}`);
-    return `
-      <article class="rag-evidence-card" data-evidence-menu-id="${escapeHtml(item.id)}">
-        <header><h4>${escapeHtml(itemName(item))}</h4><strong>${won(item.price)}</strong></header>
-        <p>${escapeHtml(ragMatchReason(result, item, message))}</p>
-        ${optionLabels.length ? `<ul>${optionLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join("")}</ul>` : ""}
-      </article>`;
-  }).join("");
-  evidence.hidden = false;
 }
 
 function synchronizeRagUi(result, message, requestId) {
@@ -842,7 +800,7 @@ function synchronizeRagUi(result, message, requestId) {
     .map((item) => [item.id, item])).values()];
 
   if (!validItems.length) {
-    clearRagFocus({ hideEvidence: true });
+    clearRagFocus();
     renderMenu();
     return;
   }
@@ -852,7 +810,6 @@ function synchronizeRagUi(result, message, requestId) {
   state.ragFocusedMenuIds = validItems.map((item) => item.id);
   renderCategories();
   renderMenu();
-  renderRagEvidence(result, message, validItems);
 
   window.requestAnimationFrame(() => {
     if (requestId !== state.ragRequestId) return;
@@ -1063,7 +1020,7 @@ function resetRagSession() {
   state.ragMessages = [];
   state.ragPendingOrder = null;
   state.cart = [];
-  clearRagFocus({ hideEvidence: true });
+  clearRagFocus();
   $("#ragMessages").innerHTML = "";
   renderCart();
   announceCartChange(tr("새 주문을 시작해 장바구니를 비웠습니다.", "A new order was started and the cart was cleared."));
@@ -1155,18 +1112,13 @@ function registerWebMcpTools() {
 $("#categoryTabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-category]");
   if (!button) return;
-  clearRagFocus({ hideEvidence: true });
+  clearRagFocus();
   state.category = button.dataset.category;
   renderCategories();
   renderMenu();
 });
 
 $("#menuGrid").addEventListener("click", (event) => {
-  const addButton = event.target.closest("[data-add-menu-id]");
-  if (addButton) {
-    openOptions(addButton.dataset.addMenuId);
-    return;
-  }
   const chatButton = event.target.closest("[data-chat-menu-id]");
   if (chatButton) prefillRagInput(chatButton.dataset.chatMenuId);
 });
@@ -1234,7 +1186,7 @@ $("#languageButton").addEventListener("click", () => {
   state.language = state.language === "ko" ? "en" : "ko";
   localStorage.setItem("cafe-kiosk-language", state.language);
   state.ragMessages = [];
-  clearRagFocus({ hideEvidence: true });
+  clearRagFocus();
   $("#ragMessages").innerHTML = "";
   applyLanguage();
   appendRagMessage("assistant", tr("한국어 화면으로 전환했습니다.", "The interface is now in English."));
@@ -1255,7 +1207,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=33").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=34").catch(console.error));
 
 renderCart();
 applyLanguage();

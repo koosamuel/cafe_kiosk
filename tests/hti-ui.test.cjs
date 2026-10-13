@@ -17,18 +17,17 @@ test("고객 화면은 푸드 탭과 내부 dessert ID를 호환한다", () => {
   assert.match(app, /dessert: "Food"/);
 });
 
-test("검증 근거 패널과 접근성 장바구니 알림을 제공한다", () => {
-  assert.match(html, /id="ragEvidence"/);
-  assert.match(html, /id="ragEvidenceItems"/);
+test("검증 근거 패널을 제거하고 접근성 장바구니 알림은 유지한다", () => {
+  assert.doesNotMatch(html, /id="ragEvidence"/);
+  assert.doesNotMatch(html, /id="ragEvidenceItems"/);
   assert.match(html, /id="cartLiveStatus"[^>]+aria-live="polite"/);
-  assert.match(css, /\.rag-evidence-card/);
+  assert.doesNotMatch(css, /\.rag-evidence/);
 });
 
-test("유효한 메뉴 ID만 화면 동기화하고 카드에 비색상 강조를 제공한다", () => {
+test("유효한 메뉴 ID만 화면 동기화하고 카드에 굵은 테두리 강조를 제공한다", () => {
   assert.match(app, /function synchronizeRagUi/);
   assert.match(app, /state\.items\.find\(\(item\) => item\.id === row\.id && item\.available !== false\)/);
-  assert.match(css, /\.menu-card\.rag-focused::after/);
-  assert.match(css, /content: "AI 추천 근거"/);
+  assert.match(css, /\.menu-card\.rag-focused \{[\s\S]*border: 3px solid/);
 });
 
 test("인라인 주문 도우미의 근거 메뉴 클릭은 옵션 창을 연다", () => {
@@ -86,13 +85,16 @@ test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배�
   assert.match(html, /id="categoryTabs"[^>]+toolbar-category-tabs/);
 });
 
-test("메뉴 카드 본문은 주문 도우미 입력을 채우고 더하기 버튼은 옵션 창을 연다", () => {
+test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 주문 도우미 입력을 채운다", () => {
   assert.match(app, /data-chat-menu-id=/);
-  assert.match(app, /data-add-menu-id=/);
+  assert.doesNotMatch(app, /data-add-menu-id=/);
+  assert.match(app, /class="menu-card-image"/);
+  assert.doesNotMatch(app, /class="badge"/);
+  assert.doesNotMatch(app, /class="category-dot"/);
+  assert.doesNotMatch(app, /class="add-symbol"/);
   assert.match(app, /function prefillRagInput\(itemId\)/);
   assert.match(app, /input\.value = itemName\(item\)/);
   assert.match(app, /prefillRagInput\(chatButton\.dataset\.chatMenuId\)/);
-  assert.match(app, /openOptions\(addButton\.dataset\.addMenuId\)/);
 });
 
 test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한다", () => {
