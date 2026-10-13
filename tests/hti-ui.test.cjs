@@ -84,8 +84,8 @@ test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이�
   assert.ok(html.indexOf('class="assistant-panel') < html.indexOf('class="cart-panel"'));
   assert.ok(html.indexOf('class="page-tabs header-page-tabs"') < html.indexOf('id="fullscreenButton"'));
   assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
-  assert.match(css, /\.assistant-panel \{[^}]*height: calc\(100vh - 124px\)/);
-  assert.match(css, /\.cart-panel \{[\s\S]*height: calc\(100vh - 124px\)/);
+  assert.match(css, /\.assistant-panel \{[^}]*height: calc\(100dvh - 156px\)/);
+  assert.match(css, /\.cart-panel \{[\s\S]*height: calc\(100dvh - 156px\)/);
 });
 
 test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배치한다", () => {

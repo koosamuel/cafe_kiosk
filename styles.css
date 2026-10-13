@@ -327,8 +327,10 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   top: 100px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 124px);
-  max-height: calc(100vh - 124px);
+  height: calc(100vh - 156px);
+  height: calc(100dvh - 156px);
+  max-height: calc(100vh - 156px);
+  max-height: calc(100dvh - 156px);
   padding: 26px;
   border: 1px solid rgba(74, 55, 42, .12);
   border-radius: var(--radius-lg);
@@ -390,7 +392,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .close-button { position: absolute; top: 18px; right: 18px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 24px; cursor: pointer; }
 .rag-modal { width: min(760px, calc(100% - 28px)); padding: 0; overflow: hidden; }
 .rag-inline { width: 100%; margin: 0 0 28px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); font-size: 70%; }
-.assistant-panel { position: sticky; top: 100px; align-self: start; height: calc(100vh - 124px); max-height: calc(100vh - 124px); margin: 0; }
+.assistant-panel { position: sticky; top: 100px; align-self: start; height: calc(100vh - 156px); height: calc(100dvh - 156px); max-height: calc(100vh - 156px); max-height: calc(100dvh - 156px); margin: 0; }
 .rag-inline .rag-shell { height: 100%; max-height: none; }
 .rag-inline .rag-messages { min-height: 220px; max-height: none; }
 .rag-inline .rag-heading h2 { font-size: 2.1em; }
