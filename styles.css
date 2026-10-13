@@ -134,6 +134,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   cursor: pointer;
 }
 .ghost-button:hover, .secondary-button:hover { border-color: var(--sage); background: var(--sage-soft); }
+.fullscreen-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-weight: 750;
+}
+.fullscreen-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.fullscreen-button .collapse-icon { display: none; }
+.fullscreen-button.is-active { border-color: var(--sage); color: white; background: var(--sage); }
+.fullscreen-button.is-active:hover { background: #263e31; }
+.fullscreen-button.is-active .expand-icon { display: none; }
+.fullscreen-button.is-active .collapse-icon { display: block; }
 .assistant-button {
   display: inline-flex;
   min-height: 44px;
@@ -493,6 +506,8 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .rag-modal { max-height: calc(100vh - 24px); }
   .rag-shell { max-height: calc(100vh - 24px); }
   .rag-inline, .rag-inline .rag-shell { max-height: none; }
+  .fullscreen-button { width: 44px; padding: 0; }
+  .fullscreen-button span { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 }
 
 @media (max-width: 580px) {

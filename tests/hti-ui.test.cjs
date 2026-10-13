@@ -41,6 +41,15 @@ test("복합 장바구니 액션은 모든 항목을 순서대로 적용한다",
   assert.match(app, /현재 합계/);
 });
 
+test("전체화면 버튼은 진입·해제와 브라우저 상태 변경을 동기화한다", () => {
+  assert.match(html, /id="fullscreenButton"[^>]+aria-pressed="false"/);
+  assert.match(app, /root\.requestFullscreen \|\| root\.webkitRequestFullscreen/);
+  assert.match(app, /document\.exitFullscreen \|\| document\.webkitExitFullscreen/);
+  assert.match(app, /addEventListener\("fullscreenchange", updateFullscreenButton\)/);
+  assert.match(app, /setAttribute\("aria-pressed", String\(active\)\)/);
+  assert.match(css, /\.fullscreen-button\.is-active/);
+});
+
 test("03 구현계획은 현재 범위와 다음 단계를 분리한다", () => {
   assert.match(plan, /12개.*현재/);
   assert.match(plan, /단계 A — 이번 구현/);

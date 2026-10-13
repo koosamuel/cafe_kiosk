@@ -104,6 +104,7 @@ function applyLanguage() {
   document.title = tr("카페 키오스크 - 1조", "Cafe Kiosk - Team 1");
   $("#languageButton").textContent = state.language === "ko" ? "한 / EN" : "EN / 한";
   $("#languageButton").setAttribute("aria-label", tr("영어로 변경", "Switch to Korean"));
+  updateFullscreenButton();
   staticTranslations.forEach(([selector, ko, en]) => {
     const element = $(selector);
     if (element) element.textContent = state.language === "en" ? en : ko;
@@ -145,6 +146,47 @@ function toast(message) {
   element.classList.add("show");
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => element.classList.remove("show"), 2500);
+}
+
+function fullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function updateFullscreenButton() {
+  const button = $("#fullscreenButton");
+  if (!button) return;
+  const active = Boolean(fullscreenElement());
+  const label = active ? tr("전체화면 종료", "Exit Fullscreen") : tr("전체화면", "Fullscreen");
+  const accessibleLabel = active ? tr("전체화면 종료", "Exit fullscreen") : tr("전체화면으로 보기", "View fullscreen");
+  button.classList.toggle("is-active", active);
+  button.setAttribute("aria-pressed", String(active));
+  button.setAttribute("aria-label", accessibleLabel);
+  button.title = accessibleLabel;
+  const text = $("span", button);
+  if (text) text.textContent = label;
+}
+
+async function toggleFullscreen() {
+  try {
+    if (fullscreenElement()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (!exit) throw new Error("Fullscreen exit is unavailable");
+      await exit.call(document);
+    } else {
+      const root = document.documentElement;
+      const enter = root.requestFullscreen || root.webkitRequestFullscreen;
+      if (!enter) {
+        toast(tr("이 브라우저는 전체화면을 지원하지 않습니다.", "This browser does not support fullscreen."));
+        return;
+      }
+      await enter.call(root);
+    }
+  } catch (error) {
+    console.error(error);
+    toast(tr("전체화면을 열 수 없습니다. 브라우저 설정을 확인해 주세요.", "Fullscreen could not be opened. Check your browser settings."));
+  } finally {
+    updateFullscreenButton();
+  }
 }
 
 function switchPageTab(tabName) {
@@ -1093,6 +1135,9 @@ $("#languageButton").addEventListener("click", () => {
   applyLanguage();
   appendRagMessage("assistant", tr("한국어 화면으로 전환했습니다.", "The interface is now in English."));
 });
+$("#fullscreenButton").addEventListener("click", toggleFullscreen);
+document.addEventListener("fullscreenchange", updateFullscreenButton);
+document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
 $$(`[data-close]`).forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
 $$(`dialog`).forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog && dialog.id !== "successDialog") dialog.close(); }));
 
@@ -1105,7 +1150,7 @@ if (db) {
   }).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=26").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=27").catch(console.error));
 
 renderCart();
 applyLanguage();
