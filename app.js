@@ -23,7 +23,6 @@ const state = {
   items: [],
   options: [],
   category: "all",
-  search: "",
   orderType: "takeout",
   cart: [],
   activeItem: null,
@@ -126,7 +125,6 @@ function applyLanguage() {
     if (element) element.textContent = state.language === "en" ? en : ko;
   });
   $("#ragInput").placeholder = tr("예: 아메리카노 두 잔 담아 줘", "e.g. Add two Americanos");
-  $("#searchInput").placeholder = tr("메뉴 검색", "Search menu");
   $("#feedbackName").placeholder = tr("예: 홍길동", "e.g. Alex");
   $("#feedbackComment").placeholder = tr("예: 메뉴 검색이 편리했습니다.", "e.g. The menu search was convenient.");
   setConnection(state.connectionMessage, state.connectionMode);
@@ -386,11 +384,9 @@ function renderCategories() {
 }
 
 function renderMenu() {
-  const normalizedSearch = state.search.toLocaleLowerCase(state.language === "en" ? "en-US" : "ko-KR");
   const visible = state.items.filter((item) => {
     const categoryMatch = state.category === "all" || item.category_id === state.category;
-    const searchMatch = !normalizedSearch || `${item.name} ${item.description} ${itemEnglish[item.id]?.join(" ") || ""}`.toLocaleLowerCase().includes(normalizedSearch);
-    return item.available !== false && categoryMatch && searchMatch;
+    return item.available !== false && categoryMatch;
   });
 
   const selectedCategory = state.categories.find((category) => category.id === state.category);
@@ -838,9 +834,7 @@ function synchronizeRagUi(result, message, requestId) {
 
   const categories = [...new Set(validItems.map((item) => item.category_id))];
   state.category = categories.length === 1 ? categories[0] : "all";
-  state.search = "";
   state.ragFocusedMenuIds = validItems.map((item) => item.id);
-  $("#searchInput").value = "";
   renderCategories();
   renderMenu();
   renderRagEvidence(result, message, validItems);
@@ -1157,12 +1151,6 @@ $("#menuGrid").addEventListener("click", (event) => {
   if (card) openOptions(card.dataset.menuId);
 });
 
-$("#searchInput").addEventListener("input", (event) => {
-  clearRagFocus({ hideEvidence: true });
-  state.search = event.target.value.trim();
-  renderMenu();
-});
-
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
   state.orderType = button.dataset.orderType;
   $$(`[data-order-type]`).forEach((candidate) => candidate.classList.toggle("active", candidate === button));
@@ -1247,7 +1235,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=30").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=31").catch(console.error));
 
 renderCart();
 applyLanguage();

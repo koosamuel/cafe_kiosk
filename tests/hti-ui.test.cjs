@@ -79,6 +79,13 @@ test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이�
   assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
 });
 
+test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배치한다", () => {
+  assert.doesNotMatch(html, /id="searchInput"/);
+  assert.doesNotMatch(css, /\.search-field/);
+  assert.match(html, /class="menu-toolbar"[\s\S]*id="categoryTabs"/);
+  assert.match(html, /id="categoryTabs"[^>]+toolbar-category-tabs/);
+});
+
 test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한다", () => {
   assert.match(app, /const menuImageSources =/);
   assert.match(app, /class="menu-card-image"/);
