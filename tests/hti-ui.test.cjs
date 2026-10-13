@@ -48,6 +48,12 @@ test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명만 전송�
   assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
 });
 
+test("사용자 메시지는 노란 배경과 진한 글자로 주문 도우미 답변과 구분한다", () => {
+  assert.match(css, /--chat-user-yellow: #f2d675/);
+  assert.match(css, /--chat-user-ink: #3a2b0b/);
+  assert.match(css, /\.rag-message\.user \{[^}]*color: var\(--chat-user-ink\);[^}]*background: var\(--chat-user-yellow\);/);
+});
+
 test("아메리카노 설명은 실제 초콜릿 첨가로 오해되지 않는 문구를 사용한다", () => {
   const americano = menu.items.find((item) => item.id === "americano");
   assert.equal(americano?.description, "진한 에스프레소에 물을 더한 깊고 깔끔한 풍미");
@@ -98,11 +104,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=47/);
-  assert.match(html, /app\.js\?v=47/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=47"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v47"/);
-  assert.match(serviceWorker, /app\.js\?v=47/);
+  assert.match(html, /styles\.css\?v=48/);
+  assert.match(html, /app\.js\?v=48/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=48"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v48"/);
+  assert.match(serviceWorker, /app\.js\?v=48/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
