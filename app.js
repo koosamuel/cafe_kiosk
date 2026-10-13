@@ -35,6 +35,7 @@ const state = {
   ragMessages: [],
   ragPendingOrder: null,
   ragFocusedMenuIds: [],
+  ragFocusLevel: "medium",
   ragRequestId: 0,
   ragSending: false,
   pendingOrder: null,
@@ -391,8 +392,11 @@ function renderMenu() {
 
   const selectedCategory = state.categories.find((category) => category.id === state.category);
   $("#categoryTitle").textContent = selectedCategory?.id === "all" ? tr("전체 메뉴", "All Menu") : selectedCategory ? (state.language === "en" ? categoryEnglish[selectedCategory.id] || selectedCategory.name : categoryKorean[selectedCategory.id] || selectedCategory.name) : tr("메뉴", "Menu");
-  $("#menuGrid").innerHTML = visible.length ? visible.map((item) => `
-    <article class="menu-card ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" data-menu-id="${escapeHtml(item.id)}">
+  $("#menuGrid").innerHTML = visible.length ? visible.map((item) => {
+    const focusIndex = state.ragFocusedMenuIds.indexOf(item.id);
+    const focusClass = focusIndex >= 0 ? `rag-focused rag-focus-${state.ragFocusLevel}` : "";
+    return `
+    <article class="menu-card ${focusClass}" data-menu-id="${escapeHtml(item.id)}">
       <button class="menu-card-select" type="button" data-menu-option-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 옵션 선택`, `Choose options for ${itemName(item)}`))}">
         ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
         <span class="menu-card-copy">
@@ -401,7 +405,8 @@ function renderMenu() {
         </span>
       </button>
     </article>
-  `).join("") : `<div class="menu-empty"><strong>${tr("검색 결과가 없습니다.", "No results found.")}</strong><br />${tr("다른 메뉴 이름을 입력해 보세요.", "Try another menu name.")}</div>`;
+  `;
+  }).join("") : `<div class="menu-empty"><strong>${tr("검색 결과가 없습니다.", "No results found.")}</strong><br />${tr("다른 메뉴 이름을 입력해 보세요.", "Try another menu name.")}</div>`;
 }
 
 function isDrink(item) {
@@ -777,6 +782,14 @@ function lockStaffBoard({ closeDialog = true } = {}) {
 
 function clearRagFocus() {
   state.ragFocusedMenuIds = [];
+  state.ragFocusLevel = "medium";
+}
+
+function ragFocusLevel(result) {
+  if (result.intent === "recommend") return "weak";
+  const strongActions = new Set(["add", "add_many", "batch", "pending", "pending_many", "pending_batch", "remove"]);
+  if (["order", "cart_update", "remove"].includes(result.intent) || strongActions.has(result.action?.type)) return "strong";
+  return "medium";
 }
 
 function synchronizeRagUi(result, message, requestId) {
@@ -795,6 +808,7 @@ function synchronizeRagUi(result, message, requestId) {
   const categories = [...new Set(validItems.map((item) => item.category_id))];
   state.category = categories.length === 1 ? categories[0] : "all";
   state.ragFocusedMenuIds = validItems.map((item) => item.id);
+  state.ragFocusLevel = ragFocusLevel(result);
   renderCategories();
   renderMenu();
 

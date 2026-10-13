@@ -9,6 +9,9 @@
   --sage: #2f4a3b;
   --sage-soft: #dfe8df;
   --terracotta: #c7643f;
+  --highlight-yellow: #d9a600;
+  --highlight-green: #2f7a4f;
+  --highlight-red: #c44536;
   --line: #ddd4c6;
   --danger: #a23d32;
   --shadow: 0 18px 50px rgba(47, 34, 24, 0.12);
@@ -306,9 +309,12 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .menu-card:hover { transform: translateY(-3px); border-color: #b8ad9d; box-shadow: 0 14px 30px rgba(60,44,34,.1); }
 .menu-card:active { transform: scale(.985); }
 .menu-card.rag-focused {
-  border: 3px solid var(--terracotta);
-  box-shadow: 0 0 0 4px rgba(199, 100, 63, .16), 0 14px 30px rgba(60,44,34,.12);
+  border: 3px solid var(--highlight-green);
+  box-shadow: 0 0 0 4px rgba(47, 122, 79, .16), 0 14px 30px rgba(60,44,34,.12);
 }
+.menu-card.rag-focus-weak { border-color: var(--highlight-yellow); box-shadow: 0 0 0 4px rgba(217, 166, 0, .18), 0 14px 30px rgba(60,44,34,.12); }
+.menu-card.rag-focus-medium { border-color: var(--highlight-green); box-shadow: 0 0 0 4px rgba(47, 122, 79, .16), 0 14px 30px rgba(60,44,34,.12); }
+.menu-card.rag-focus-strong { border-color: var(--highlight-red); box-shadow: 0 0 0 4px rgba(196, 69, 54, .16), 0 14px 30px rgba(60,44,34,.12); }
 .menu-card h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.035em; }
 .menu-card strong { font-size: 18px; }
 .menu-empty { grid-column: 1 / -1; padding: 60px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius-md); }

@@ -25,10 +25,17 @@ test("검증 근거 패널을 제거하고 접근성 장바구니 알림은 유�
   assert.doesNotMatch(css, /\.rag-evidence/);
 });
 
-test("유효한 메뉴 ID만 화면 동기화하고 카드에 굵은 테두리 강조를 제공한다", () => {
+test("유효한 메뉴 ID만 화면 동기화하고 카드에 노랑·그린·빨강 테두리 강조를 제공한다", () => {
   assert.match(app, /function synchronizeRagUi/);
   assert.match(app, /state\.items\.find\(\(item\) => item\.id === row\.id && item\.available !== false\)/);
+  assert.match(app, /function ragFocusLevel\(result\)/);
+  assert.match(app, /result\.intent === "recommend"\) return "weak"/);
+  assert.match(app, /strongActions\.has\(result\.action\?\.type\)/);
+  assert.match(app, /rag-focus-\$\{state\.ragFocusLevel\}/);
   assert.match(css, /\.menu-card\.rag-focused \{[\s\S]*border: 3px solid/);
+  assert.match(css, /\.menu-card\.rag-focus-weak \{ border-color: var\(--highlight-yellow\);/);
+  assert.match(css, /\.menu-card\.rag-focus-medium \{ border-color: var\(--highlight-green\);/);
+  assert.match(css, /\.menu-card\.rag-focus-strong \{ border-color: var\(--highlight-red\);/);
 });
 
 test("인라인 주문 도우미의 근거 메뉴 클릭은 옵션 창을 연다", () => {
