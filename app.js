@@ -392,18 +392,33 @@ function renderMenu() {
   const selectedCategory = state.categories.find((category) => category.id === state.category);
   $("#categoryTitle").textContent = selectedCategory?.id === "all" ? tr("전체 메뉴", "All Menu") : selectedCategory ? (state.language === "en" ? categoryEnglish[selectedCategory.id] || selectedCategory.name : categoryKorean[selectedCategory.id] || selectedCategory.name) : tr("메뉴", "Menu");
   $("#menuGrid").innerHTML = visible.length ? visible.map((item) => `
-    <button class="menu-card ${menuImageSources[item.id] ? "has-image" : ""} ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" type="button" data-menu-id="${escapeHtml(item.id)}" style="--accent:${categoryColors[item.category_id] || "#2f4a3b"}">
-      ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
-      <span class="menu-card-copy">
-        ${item.badge ? `<span class="badge">${escapeHtml(state.language === "en" && item.badge === "추천" ? "Recommended" : item.badge)}</span>` : `<span class="badge" aria-hidden="true">MENU</span>`}
-        <span class="category-dot" style="background:var(--accent)"></span>
-        <h3>${escapeHtml(itemName(item))}</h3>
-        <p>${escapeHtml(itemDescription(item))}</p>
-        <strong>${won(item.price)}</strong>
-      </span>
-      <span class="add-symbol" aria-hidden="true">＋</span>
-    </button>
+    <article class="menu-card ${menuImageSources[item.id] ? "has-image" : ""} ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" data-menu-id="${escapeHtml(item.id)}" style="--accent:${categoryColors[item.category_id] || "#2f4a3b"}">
+      <button class="menu-card-select" type="button" data-chat-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 주문 도우미에 입력`, `Enter ${itemName(item)} in the order assistant`))}">
+        ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
+        <span class="menu-card-copy">
+          ${item.badge ? `<span class="badge">${escapeHtml(state.language === "en" && item.badge === "추천" ? "Recommended" : item.badge)}</span>` : `<span class="badge" aria-hidden="true">MENU</span>`}
+          <span class="category-dot" style="background:var(--accent)"></span>
+          <h3>${escapeHtml(itemName(item))}</h3>
+          <p>${escapeHtml(itemDescription(item))}</p>
+          <strong>${won(item.price)}</strong>
+        </span>
+      </button>
+      <button class="add-symbol" type="button" data-add-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 옵션 선택`, `Choose options for ${itemName(item)}`))}">＋</button>
+    </article>
   `).join("") : `<div class="menu-empty"><strong>${tr("검색 결과가 없습니다.", "No results found.")}</strong><br />${tr("다른 메뉴 이름을 입력해 보세요.", "Try another menu name.")}</div>`;
+}
+
+function prefillRagInput(itemId) {
+  const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
+  if (!item) return;
+  const input = $("#ragInput");
+  input.value = itemName(item);
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  $("#ragDialog").scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest" });
+  window.requestAnimationFrame(() => {
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(input.value.length, input.value.length);
+  });
 }
 
 function isDrink(item) {
@@ -1147,8 +1162,13 @@ $("#categoryTabs").addEventListener("click", (event) => {
 });
 
 $("#menuGrid").addEventListener("click", (event) => {
-  const card = event.target.closest("[data-menu-id]");
-  if (card) openOptions(card.dataset.menuId);
+  const addButton = event.target.closest("[data-add-menu-id]");
+  if (addButton) {
+    openOptions(addButton.dataset.addMenuId);
+    return;
+  }
+  const chatButton = event.target.closest("[data-chat-menu-id]");
+  if (chatButton) prefillRagInput(chatButton.dataset.chatMenuId);
 });
 
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
@@ -1235,7 +1255,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=31").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=32").catch(console.error));
 
 renderCart();
 applyLanguage();

@@ -86,6 +86,15 @@ test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배�
   assert.match(html, /id="categoryTabs"[^>]+toolbar-category-tabs/);
 });
 
+test("메뉴 카드 본문은 주문 도우미 입력을 채우고 더하기 버튼은 옵션 창을 연다", () => {
+  assert.match(app, /data-chat-menu-id=/);
+  assert.match(app, /data-add-menu-id=/);
+  assert.match(app, /function prefillRagInput\(itemId\)/);
+  assert.match(app, /input\.value = itemName\(item\)/);
+  assert.match(app, /prefillRagInput\(chatButton\.dataset\.chatMenuId\)/);
+  assert.match(app, /openOptions\(addButton\.dataset\.addMenuId\)/);
+});
+
 test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한다", () => {
   assert.match(app, /const menuImageSources =/);
   assert.match(app, /class="menu-card-image"/);
