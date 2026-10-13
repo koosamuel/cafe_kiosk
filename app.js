@@ -847,7 +847,7 @@ function appendRagMessage(role, text, retrieved = []) {
   const article = document.createElement("article");
   article.className = `rag-message ${role}`;
   article.innerHTML = `
-    <span class="rag-message-label">${role === "user" ? tr("나", "You") : tr("주문 도우미", "Order Assistant")}</span>
+    ${role === "assistant" ? `<span class="rag-message-label">${tr("주문 도우미", "Order Assistant")}</span>` : ""}
     <p>${escapeHtml(text)}</p>
     ${retrieved.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${retrieved.map((item) => `
       <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 메뉴 보기`, `View ${itemName(item)}`))}">
@@ -1204,7 +1204,7 @@ $("#ragInput").addEventListener("keydown", (event) => {
 $(".rag-prompts").addEventListener("click", (event) => {
   const button = event.target.closest("[data-rag-prompt]");
   if (!button) return;
-  $("#ragInput").value = button.dataset.ragPrompt;
+  $("#ragInput").value = state.language === "en" ? button.dataset.ragPromptEn : button.dataset.ragPrompt;
   $("#ragForm").requestSubmit();
 });
 $("#ragMessages").addEventListener("click", (event) => {
@@ -1241,7 +1241,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=48").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=49").catch(console.error));
 
 renderCart();
 applyLanguage();

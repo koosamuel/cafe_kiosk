@@ -36,22 +36,22 @@
   };
 
   const MEAL_PAIRINGS = [
-    { label: "샌드위치", aliases: ["샌드위치", "토스트", "햄버거"], recommendations: [
+    { label: "샌드위치", aliases: ["샌드위치", "토스트", "햄버거", "sandwich", "toast", "burger"], recommendations: [
       ["americano", "깔끔하고 쌉쌀해 빵과 속재료의 풍미를 정리해 줍니다."],
       ["cafe-latte", "부드럽고 고소해 담백한 샌드위치와 잘 어울립니다."],
       ["earl-grey", "베르가못 향이 산뜻해 채소나 햄과 균형을 이룹니다."],
     ] },
-    { label: "샐러드", aliases: ["샐러드", "채소식", "야채식"], recommendations: [
+    { label: "샐러드", aliases: ["샐러드", "채소식", "야채식", "salad"], recommendations: [
       ["earl-grey", "향긋하고 깔끔해 신선한 채소 맛을 해치지 않습니다."],
       ["citron-tea", "상큼한 유자 향이 가벼운 샐러드와 잘 어울립니다."],
       ["lemon-ade", "산뜻하고 청량해 고소한 드레싱과 균형을 이룹니다."],
     ] },
-    { label: "파스타", aliases: ["파스타", "스파게티", "면요리"], recommendations: [
+    { label: "파스타", aliases: ["파스타", "스파게티", "면요리", "pasta", "spaghetti"], recommendations: [
       ["americano", "쌉쌀하고 깔끔해 크림이나 치즈의 묵직함을 정리해 줍니다."],
       ["lemon-ade", "상큼한 풍미가 진한 소스 뒤 입안을 산뜻하게 합니다."],
       ["citron-tea", "유자 향이 오일이나 토마토소스와 가볍게 어울립니다."],
     ] },
-    { label: "치킨", aliases: ["치킨", "닭요리", "닭고기"], recommendations: [
+    { label: "치킨", aliases: ["치킨", "닭요리", "닭고기", "chicken"], recommendations: [
       ["citron-tea", "상큼한 유자 향이 기름진 맛을 정리해 줍니다."],
       ["lemon-ade", "청량한 탄산이 튀김이나 양념과 잘 어울립니다."],
       ["americano", "단맛이 적고 쌉쌀해 치킨의 풍미를 방해하지 않습니다."],

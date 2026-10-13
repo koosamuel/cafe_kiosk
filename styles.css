@@ -415,7 +415,6 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .rag-inline .rag-messages { min-height: 220px; max-height: none; }
 .rag-inline .rag-heading h2 { font-size: 2.1em; }
 .rag-inline .rag-statusbar, .rag-inline .rag-statusbar button, .rag-inline .rag-prompts button, .rag-inline .rag-notice { font-size: 1em; }
-.rag-inline .rag-message-label { font-size: .8em; }
 .rag-shell { display: grid; grid-template-rows: auto auto auto auto auto minmax(220px, 1fr) auto; max-height: min(88vh, 850px); }
 .rag-heading { position: relative; padding: 20px 28px; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, #fffdf8, #eef3ec); }
 .rag-heading h2 { margin: 0; }
@@ -431,10 +430,9 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .rag-prompts button:hover { border-color: var(--sage); background: var(--sage-soft); }
 .rag-messages { display: flex; min-height: 280px; padding: 22px; overflow-y: auto; flex-direction: column; gap: 14px; background: var(--paper-2); }
 .rag-turn { display: flex; flex: 0 0 auto; flex-direction: column; gap: 10px; }
-.rag-message { align-self: flex-end; width: fit-content; max-width: 82%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 17px 4px 17px 17px; background: var(--paper); box-shadow: 0 5px 15px rgba(47,34,24,.06); }
-.rag-message.user { align-self: flex-start; border-color: var(--chat-user-yellow-border); border-radius: 4px 17px 17px; color: var(--chat-user-ink); background: var(--chat-user-yellow); }
+.rag-message { align-self: flex-start; width: fit-content; max-width: 82%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 4px 17px 17px; background: var(--paper); box-shadow: 0 5px 15px rgba(47,34,24,.06); }
+.rag-message.user { align-self: flex-end; border-color: var(--chat-user-yellow-border); border-radius: 17px 4px 17px 17px; color: var(--chat-user-ink); background: var(--chat-user-yellow); }
 .rag-message-label { display: block; margin-bottom: 5px; color: var(--terracotta); font-size: 11px; font-weight: 850; letter-spacing: .06em; }
-.rag-message.user .rag-message-label { color: #644a00; }
 .rag-message p { margin: 0; line-height: 1.65; white-space: pre-line; }
 .rag-sources { display: grid; gap: 7px; margin-top: 11px; }
 .rag-sources button { display: flex; width: 100%; min-height: 42px; align-items: center; justify-content: space-between; gap: 15px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: white; cursor: pointer; }

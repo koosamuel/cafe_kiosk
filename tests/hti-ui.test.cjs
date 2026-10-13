@@ -51,7 +51,13 @@ test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명만 전송�
 test("사용자 메시지는 노란 배경과 진한 글자로 주문 도우미 답변과 구분한다", () => {
   assert.match(css, /--chat-user-yellow: #f2d675/);
   assert.match(css, /--chat-user-ink: #3a2b0b/);
-  assert.match(css, /\.rag-message\.user \{[^}]*color: var\(--chat-user-ink\);[^}]*background: var\(--chat-user-yellow\);/);
+  assert.match(css, /\.rag-message \{ align-self: flex-start;/);
+  assert.match(css, /\.rag-message\.user \{ align-self: flex-end;[^}]*color: var\(--chat-user-ink\);[^}]*background: var\(--chat-user-yellow\);/);
+  assert.match(app, /role === "assistant" \? `<span class="rag-message-label">\$\{tr\("주문 도우미", "Order Assistant"\)\}<\/span>` : ""/);
+  assert.doesNotMatch(app, /tr\("나", "You"\)/);
+  assert.match(css, /\.rag-message-label \{/);
+  assert.match(html, /data-rag-prompt-en="Recommend a drink that pairs with a sandwich"/);
+  assert.match(app, /state\.language === "en" \? button\.dataset\.ragPromptEn : button\.dataset\.ragPrompt/);
 });
 
 test("아메리카노 설명은 실제 초콜릿 첨가로 오해되지 않는 문구를 사용한다", () => {
@@ -104,11 +110,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=48/);
-  assert.match(html, /app\.js\?v=48/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=48"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v48"/);
-  assert.match(serviceWorker, /app\.js\?v=48/);
+  assert.match(html, /styles\.css\?v=49/);
+  assert.match(html, /app\.js\?v=49/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=49"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v49"/);
+  assert.match(serviceWorker, /app\.js\?v=49/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
