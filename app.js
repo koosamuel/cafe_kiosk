@@ -46,6 +46,20 @@ const state = {
 
 const categoryKorean = { all: "전체", coffee: "커피", noncoffee: "논커피", tea: "티", dessert: "푸드" };
 const categoryEnglish = { all: "All", coffee: "Coffee", noncoffee: "Non-Coffee", tea: "Tea", dessert: "Food" };
+const menuImageSources = {
+  americano: "./assets/menu/americano.jpg",
+  "cafe-latte": "./assets/menu/cafe-latte.jpg",
+  "vanilla-latte": "./assets/menu/vanilla-latte.jpg",
+  "flat-white": "./assets/menu/flat-white.jpg",
+  "matcha-latte": "./assets/menu/matcha-latte.jpg",
+  chocolate: "./assets/menu/chocolate.jpg",
+  "lemon-ade": "./assets/menu/lemon-ade.jpg",
+  "earl-grey": "./assets/menu/earl-grey.jpg",
+  "citron-tea": "./assets/menu/citron-tea.jpg",
+  croissant: "./assets/menu/croissant.jpg",
+  financier: "./assets/menu/financier.jpg",
+  cheesecake: "./assets/menu/cheesecake.jpg",
+};
 const itemEnglish = {
   americano: ["Americano", "Nutty chocolate aroma with a clean finish"],
   "cafe-latte": ["Cafe Latte", "A smooth balance of espresso and milk"],
@@ -382,12 +396,15 @@ function renderMenu() {
   const selectedCategory = state.categories.find((category) => category.id === state.category);
   $("#categoryTitle").textContent = selectedCategory?.id === "all" ? tr("전체 메뉴", "All Menu") : selectedCategory ? (state.language === "en" ? categoryEnglish[selectedCategory.id] || selectedCategory.name : categoryKorean[selectedCategory.id] || selectedCategory.name) : tr("메뉴", "Menu");
   $("#menuGrid").innerHTML = visible.length ? visible.map((item) => `
-    <button class="menu-card ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" type="button" data-menu-id="${escapeHtml(item.id)}" style="--accent:${categoryColors[item.category_id] || "#2f4a3b"}">
-      ${item.badge ? `<span class="badge">${escapeHtml(state.language === "en" && item.badge === "추천" ? "Recommended" : item.badge)}</span>` : `<span class="badge" aria-hidden="true">MENU</span>`}
-      <span class="category-dot" style="background:var(--accent)"></span>
-      <h3>${escapeHtml(itemName(item))}</h3>
-      <p>${escapeHtml(itemDescription(item))}</p>
-      <strong>${won(item.price)}</strong>
+    <button class="menu-card ${menuImageSources[item.id] ? "has-image" : ""} ${state.ragFocusedMenuIds.includes(item.id) ? "rag-focused" : ""}" type="button" data-menu-id="${escapeHtml(item.id)}" style="--accent:${categoryColors[item.category_id] || "#2f4a3b"}">
+      ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
+      <span class="menu-card-copy">
+        ${item.badge ? `<span class="badge">${escapeHtml(state.language === "en" && item.badge === "추천" ? "Recommended" : item.badge)}</span>` : `<span class="badge" aria-hidden="true">MENU</span>`}
+        <span class="category-dot" style="background:var(--accent)"></span>
+        <h3>${escapeHtml(itemName(item))}</h3>
+        <p>${escapeHtml(itemDescription(item))}</p>
+        <strong>${won(item.price)}</strong>
+      </span>
       <span class="add-symbol" aria-hidden="true">＋</span>
     </button>
   `).join("") : `<div class="menu-empty"><strong>${tr("검색 결과가 없습니다.", "No results found.")}</strong><br />${tr("다른 메뉴 이름을 입력해 보세요.", "Try another menu name.")}</div>`;
@@ -1230,7 +1247,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=29").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=30").catch(console.error));
 
 renderCart();
 applyLanguage();

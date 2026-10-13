@@ -291,8 +291,12 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .menu-card {
   position: relative;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
   min-height: 190px;
-  padding: 22px;
+  padding: 18px;
   text-align: left;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -301,6 +305,9 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   cursor: pointer;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
+.menu-card:not(.has-image) { grid-template-columns: 1fr; }
+.menu-card-image { width: 104px; height: 122px; object-fit: cover; border-radius: 18px; background: #f3eee5; box-shadow: 0 7px 18px rgba(60,44,34,.12); }
+.menu-card-copy { display: flex; min-width: 0; min-height: 142px; flex-direction: column; align-items: flex-start; }
 .menu-card:hover { transform: translateY(-3px); border-color: #b8ad9d; box-shadow: 0 14px 30px rgba(60,44,34,.1); }
 .menu-card:active { transform: scale(.985); }
 .menu-card.rag-focused {
@@ -320,12 +327,15 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   font-weight: 850;
 }
 .menu-card .badge { display: inline-flex; min-height: 25px; align-items: center; padding: 0 9px; border-radius: 999px; color: var(--terracotta); background: #fae8de; font-size: 11px; font-weight: 850; }
-.menu-card .category-dot { display: block; width: 34px; height: 4px; margin: 18px 0 14px; border-radius: 99px; background: var(--sage); }
+.menu-card .category-dot { display: block; width: 34px; height: 4px; margin: 12px 0 12px; border-radius: 99px; background: var(--sage); }
 .menu-card h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.035em; }
-.menu-card p { min-height: 43px; margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-.menu-card strong { font-size: 18px; }
+.menu-card p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.menu-card strong { margin-top: auto; padding-right: 38px; font-size: 18px; }
 .menu-card .add-symbol { position: absolute; right: 18px; bottom: 18px; display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: white; background: var(--espresso); font-size: 22px; }
 .menu-empty { grid-column: 1 / -1; padding: 60px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius-md); }
+
+.demo-source-note { margin: 0; padding: 14px 24px 22px; color: var(--muted); background: var(--cream); font-size: 11px; line-height: 1.55; text-align: center; }
+.demo-source-note a { color: var(--sage); font-weight: 800; }
 
 .cart-panel {
   position: sticky;
@@ -559,7 +569,9 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .menu-toolbar { align-items: stretch; flex-direction: column; }
   .search-field { min-width: 100%; }
   .menu-grid { grid-template-columns: 1fr; }
-  .menu-card { min-height: 165px; }
+  .menu-card { grid-template-columns: 92px minmax(0, 1fr); min-height: 165px; gap: 14px; padding: 15px; }
+  .menu-card-image { width: 92px; height: 110px; border-radius: 15px; }
+  .menu-card-copy { min-height: 132px; }
   .modal { padding: 25px 20px; }
   .rag-modal { padding: 0; }
   .rag-heading { padding: 18px 20px; }

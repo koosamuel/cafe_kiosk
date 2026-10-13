@@ -78,6 +78,16 @@ test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이�
   assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
 });
 
+test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한다", () => {
+  assert.match(app, /const menuImageSources =/);
+  assert.match(app, /class="menu-card-image"/);
+  assert.match(html, /스타벅스 코리아 공식 메뉴/);
+  assert.match(html, /제휴하거나 후원받지 않았으며/);
+  menu.items.forEach((item) => {
+    assert.ok(fs.existsSync(path.join(root, "assets", "menu", `${item.id}.jpg`)), `${item.id} image is missing`);
+  });
+});
+
 test("03 구현계획은 현재 범위와 다음 단계를 분리한다", () => {
   assert.match(plan, /12개.*현재/);
   assert.match(plan, /단계 A — 이번 구현/);

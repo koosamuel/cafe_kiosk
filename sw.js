@@ -1,16 +1,28 @@
-const CACHE_NAME = "morning-brew-v29";
+const CACHE_NAME = "morning-brew-v30";
 const LOCAL_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=29",
-  "./app.js?v=29",
-  "./rag-assistant.js?v=29",
-  "./config.js?v=29",
+  "./styles.css?v=30",
+  "./app.js?v=30",
+  "./rag-assistant.js?v=30",
+  "./config.js?v=30",
   "./team-feedback.json",
   "./menu.json",
   "./manifest.webmanifest",
   "./assets/featured-cafe.png",
   "./assets/og-cafe-kiosk.png",
+  "./assets/menu/americano.jpg",
+  "./assets/menu/cafe-latte.jpg",
+  "./assets/menu/vanilla-latte.jpg",
+  "./assets/menu/flat-white.jpg",
+  "./assets/menu/matcha-latte.jpg",
+  "./assets/menu/chocolate.jpg",
+  "./assets/menu/lemon-ade.jpg",
+  "./assets/menu/earl-grey.jpg",
+  "./assets/menu/citron-tea.jpg",
+  "./assets/menu/croissant.jpg",
+  "./assets/menu/financier.jpg",
+  "./assets/menu/cheesecake.jpg",
 ];
 
 self.addEventListener("install", (event) => {
