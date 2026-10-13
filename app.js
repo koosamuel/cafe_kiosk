@@ -149,7 +149,50 @@ function toast(message) {
 }
 
 function fullscreenElement() {
-  return document.fullscreenElement || document.webkitFullscreenElement || null;
+  return document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement
+    || null;
+}
+
+function fullscreenEnterMethod() {
+  const root = document.documentElement;
+  return {
+    context: root,
+    method: root.requestFullscreen
+      || root.webkitRequestFullscreen
+      || root.mozRequestFullScreen
+      || root.msRequestFullscreen
+      || null,
+  };
+}
+
+function fullscreenExitMethod() {
+  return document.exitFullscreen
+    || document.webkitExitFullscreen
+    || document.webkitCancelFullScreen
+    || document.mozCancelFullScreen
+    || document.msExitFullscreen
+    || null;
+}
+
+function waitForFullscreenState(active, timeout = 1200) {
+  if (Boolean(fullscreenElement()) === active) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const events = ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"];
+    let timer;
+    const finish = () => {
+      events.forEach((eventName) => document.removeEventListener(eventName, onChange));
+      clearTimeout(timer);
+      resolve(Boolean(fullscreenElement()) === active);
+    };
+    const onChange = () => {
+      if (Boolean(fullscreenElement()) === active) finish();
+    };
+    events.forEach((eventName) => document.addEventListener(eventName, onChange));
+    timer = setTimeout(finish, timeout);
+  });
 }
 
 function updateFullscreenButton() {
@@ -167,24 +210,37 @@ function updateFullscreenButton() {
 }
 
 async function toggleFullscreen() {
+  const entering = !fullscreenElement();
+  const button = $("#fullscreenButton");
+  button.disabled = true;
   try {
-    if (fullscreenElement()) {
-      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (!entering) {
+      const exit = fullscreenExitMethod();
       if (!exit) throw new Error("Fullscreen exit is unavailable");
-      await exit.call(document);
+      await Promise.resolve(exit.call(document));
     } else {
-      const root = document.documentElement;
-      const enter = root.requestFullscreen || root.webkitRequestFullscreen;
-      if (!enter) {
+      const { context, method } = fullscreenEnterMethod();
+      if (!method) {
         toast(tr("이 브라우저는 전체화면을 지원하지 않습니다.", "This browser does not support fullscreen."));
         return;
       }
-      await enter.call(root);
+      await Promise.resolve(method.call(context));
+    }
+    const changed = await waitForFullscreenState(entering);
+    if (!changed) {
+      const message = entering
+        ? tr("전체화면으로 전환되지 않았습니다. 브라우저 권한을 확인해 주세요.", "Fullscreen did not open. Check browser permissions.")
+        : tr("전체화면을 종료하지 못했습니다. 브라우저의 뒤로 또는 Esc를 눌러 주세요.", "Fullscreen did not close. Use the browser Back button or Esc.");
+      toast(message);
     }
   } catch (error) {
     console.error(error);
-    toast(tr("전체화면을 열 수 없습니다. 브라우저 설정을 확인해 주세요.", "Fullscreen could not be opened. Check your browser settings."));
+    const message = entering
+      ? tr("전체화면을 열 수 없습니다. 브라우저 설정을 확인해 주세요.", "Fullscreen could not be opened. Check your browser settings.")
+      : tr("전체화면을 종료하지 못했습니다. 브라우저의 뒤로 또는 Esc를 눌러 주세요.", "Fullscreen could not be closed. Use the browser Back button or Esc.");
+    toast(message);
   } finally {
+    button.disabled = false;
     updateFullscreenButton();
   }
 }
@@ -1138,6 +1194,11 @@ $("#languageButton").addEventListener("click", () => {
 $("#fullscreenButton").addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
 document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+document.addEventListener("mozfullscreenchange", updateFullscreenButton);
+document.addEventListener("MSFullscreenChange", updateFullscreenButton);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && fullscreenElement()) void toggleFullscreen();
+}, true);
 $$(`[data-close]`).forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
 $$(`dialog`).forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog && dialog.id !== "successDialog") dialog.close(); }));
 
@@ -1150,7 +1211,7 @@ if (db) {
   }).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=27").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=28").catch(console.error));
 
 renderCart();
 applyLanguage();

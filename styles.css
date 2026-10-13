@@ -143,8 +143,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 }
 .fullscreen-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .fullscreen-button .collapse-icon { display: none; }
-.fullscreen-button.is-active { border-color: var(--sage); color: white; background: var(--sage); }
+.fullscreen-button.is-active {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 120;
+  border-color: var(--sage);
+  color: white;
+  background: var(--sage);
+  box-shadow: 0 10px 28px rgba(43, 33, 28, .24);
+}
 .fullscreen-button.is-active:hover { background: #263e31; }
+.fullscreen-button:disabled { cursor: wait; opacity: .72; }
 .fullscreen-button.is-active .expand-icon { display: none; }
 .fullscreen-button.is-active .collapse-icon { display: block; }
 .assistant-button {
