@@ -278,6 +278,22 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 }
 .menu-card:hover { transform: translateY(-3px); border-color: #b8ad9d; box-shadow: 0 14px 30px rgba(60,44,34,.1); }
 .menu-card:active { transform: scale(.985); }
+.menu-card.rag-focused {
+  border: 3px solid var(--terracotta);
+  box-shadow: 0 0 0 4px rgba(199, 100, 63, .16), 0 14px 30px rgba(60,44,34,.12);
+}
+.menu-card.rag-focused::after {
+  content: "AI 추천 근거";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: white;
+  background: var(--terracotta);
+  font-size: 10px;
+  font-weight: 850;
+}
 .menu-card .badge { display: inline-flex; min-height: 25px; align-items: center; padding: 0 9px; border-radius: 999px; color: var(--terracotta); background: #fae8de; font-size: 11px; font-weight: 850; }
 .menu-card .category-dot { display: block; width: 34px; height: 4px; margin: 18px 0 14px; border-radius: 99px; background: var(--sage); }
 .menu-card h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.035em; }
@@ -358,7 +374,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .rag-inline .rag-heading h2 { font-size: 2.1em; }
 .rag-inline .rag-statusbar, .rag-inline .rag-statusbar button, .rag-inline .rag-prompts button, .rag-inline .rag-notice { font-size: 1em; }
 .rag-inline .rag-message-label { font-size: .8em; }
-.rag-shell { display: grid; grid-template-rows: auto auto auto auto auto minmax(220px, 1fr); max-height: min(88vh, 850px); }
+.rag-shell { display: grid; grid-template-rows: auto auto auto auto auto minmax(220px, 1fr) auto; max-height: min(88vh, 850px); }
 .rag-heading { position: relative; padding: 20px 28px; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, #fffdf8, #eef3ec); }
 .rag-heading h2 { margin: 0; }
 .rag-heading p:last-child { margin: 0; color: var(--muted); line-height: 1.55; }
@@ -387,6 +403,18 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .rag-form textarea { min-height: 58px; max-height: 130px; padding: 13px 14px; resize: vertical; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: white; line-height: 1.5; }
 .rag-form .primary-button { min-height: 58px; }
 .rag-notice { margin: 0; padding: 0 20px 17px; color: var(--muted); background: var(--paper); font-size: 11px; }
+.rag-evidence { padding: 18px 20px 20px; border-top: 1px solid var(--line); background: #fffaf1; }
+.rag-evidence > header { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.rag-evidence h3 { margin: 0; font-size: 18px; }
+.rag-evidence > header > span { color: var(--muted); font-size: 12px; font-weight: 750; }
+.rag-evidence-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rag-evidence-card { padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+.rag-evidence-card header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.rag-evidence-card h4 { margin: 0; font-size: 15px; }
+.rag-evidence-card strong { flex: 0 0 auto; color: var(--terracotta); }
+.rag-evidence-card p { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.rag-evidence-card ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.rag-evidence-card li { padding: 5px 8px; border-radius: 999px; color: var(--sage); background: var(--sage-soft); font-size: 10px; font-weight: 750; }
 .option-groups { display: grid; gap: 22px; margin: 28px 0; }
 .option-group { padding-top: 20px; border-top: 1px solid var(--line); }
 .option-group legend { margin-bottom: 12px; font-weight: 800; }
@@ -496,6 +524,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .rag-heading { padding: 18px 20px; }
   .rag-messages { min-height: 260px; padding: 16px; }
   .rag-message { max-width: 92%; }
+  .rag-evidence-items { grid-template-columns: 1fr; }
   .rag-form { grid-template-columns: 1fr; padding: 13px 16px 8px; }
   .rag-form .primary-button { min-height: 48px; }
   .rag-notice { padding-inline: 16px; }

@@ -12,7 +12,7 @@
   <title>카페 키오스크 - 1조</title>
   <link rel="icon" href="./assets/featured-cafe.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=24" />
+  <link rel="stylesheet" href="./styles.css?v=26" />
 </head>
 <body>
   <a class="skip-link" href="#menuGrid">메뉴로 바로가기</a>
@@ -67,6 +67,17 @@
           <p class="rag-notice">검색·대화 로직은 브라우저에서 실행되며, 최종 가격과 주문은 Supabase가 다시 검증합니다.</p>
 
           <div id="ragMessages" class="rag-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+
+          <section id="ragEvidence" class="rag-evidence" aria-labelledby="ragEvidenceTitle" hidden>
+            <header>
+              <div>
+                <p class="eyebrow">VERIFIED MATCH</p>
+                <h3 id="ragEvidenceTitle">조건·가격 근거</h3>
+              </div>
+              <span id="ragEvidenceCount"></span>
+            </header>
+            <div id="ragEvidenceItems" class="rag-evidence-items"></div>
+          </section>
         </div>
       </section>
 
@@ -96,6 +107,7 @@
         <span id="cartCount" class="cart-count">0</span>
       </div>
       <div id="cartItems" class="cart-items"></div>
+      <p id="cartLiveStatus" class="sr-only" role="status" aria-live="polite"></p>
       <div class="cart-summary">
         <div><span>상품 금액</span><strong id="subtotal">0원</strong></div>
         <div><span>할인</span><strong>0원</strong></div>
@@ -209,7 +221,7 @@
 
   <script src="./config.js?v=20" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="./rag-assistant.js?v=24" defer></script>
-  <script src="./app.js?v=24" defer></script>
+  <script src="./rag-assistant.js?v=26" defer></script>
+  <script src="./app.js?v=26" defer></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
     { "id": "coffee", "name": "커피", "sort_order": 1 },
     { "id": "noncoffee", "name": "논커피", "sort_order": 2 },
     { "id": "tea", "name": "티", "sort_order": 3 },
-    { "id": "dessert", "name": "디저트", "sort_order": 4 }
+    { "id": "dessert", "name": "푸드", "sort_order": 4 }
   ],
   "items": [
     { "id": "americano", "category_id": "coffee", "name": "아메리카노", "description": "고소한 초콜릿 향과 깔끔한 끝맛", "price": 3500, "badge": "BEST", "available": true },

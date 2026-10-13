@@ -39,7 +39,7 @@ git push origin main
 | `supabase/schema.sql` | 테이블, RLS, 주문 생성 함수와 초기 메뉴 |
 | `sw.js`, `manifest.webmanifest` | PWA와 정적 자산 캐시 |
 | `README.md` | 실행·설정·배포 안내 |
-| `구현계획.md` | 합의된 구조, 현재 구현 상태와 다음 작업 |
+| `03_구현계획.md` | HTI·UX·UI와 팀 피드백을 반영한 현재 구현 상태와 다음 작업 |
 | `tests/` | 주문 도우미 검색·의도·장바구니 자동 테스트 |
 
 ## 4. 역할 분담 예시
@@ -68,4 +68,4 @@ git push origin main
 - [ ] 태블릿과 모바일 폭에서 버튼과 글자가 겹치지 않는다.
 - [ ] 가격은 Supabase 함수에서 다시 계산된다.
 - [ ] 비밀번호나 비밀 키가 포함되지 않았다.
-- [ ] 필요한 경우 `README.md`와 `구현계획.md`를 함께 갱신했다.
+- [ ] 필요한 경우 `README.md`와 `03_구현계획.md`를 함께 갱신했다.
