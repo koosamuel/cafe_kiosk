@@ -38,9 +38,11 @@ test("유효한 메뉴 ID만 화면 동기화하고 카드에 노랑·그린·�
   assert.match(css, /\.menu-card\.rag-focus-strong \{ border-color: var\(--highlight-red\);/);
 });
 
-test("인라인 주문 도우미의 근거 메뉴 클릭은 옵션 창을 연다", () => {
-  assert.match(app, /openOptions\(button\.dataset\.ragMenuId\)/);
-  assert.doesNotMatch(app, /\$\("#ragDialog"\)\.close\(\)/);
+test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명을 입력하고 질문을 전송한다", () => {
+  assert.match(app, /candidate\.id === button\.dataset\.ragMenuId && candidate\.available !== false/);
+  assert.match(app, /\$\("#ragInput"\)\.value = itemName\(item\)/);
+  assert.match(app, /\$\("#ragForm"\)\.requestSubmit\(\)/);
+  assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
 });
 
 test("복합 장바구니 액션은 모든 항목을 순서대로 적용한다", () => {

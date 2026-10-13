@@ -832,7 +832,7 @@ function appendRagMessage(role, text, retrieved = []) {
     <span class="rag-message-label">${role === "user" ? tr("나", "You") : tr("주문 도우미", "Order Assistant")}</span>
     <p>${escapeHtml(text)}</p>
     ${retrieved.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${retrieved.map((item) => `
-      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}">
+      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 정보 요청 보내기`, `Ask about ${itemName(item)}`))}">
         <span>${escapeHtml(itemName(item))}</span><strong>${won(item.price)}</strong>
       </button>`).join("")}</div>` : ""}`;
   const messages = $("#ragMessages");
@@ -1177,7 +1177,10 @@ $(".rag-prompts").addEventListener("click", (event) => {
 $("#ragMessages").addEventListener("click", (event) => {
   const button = event.target.closest("[data-rag-menu-id]");
   if (!button) return;
-  openOptions(button.dataset.ragMenuId);
+  const item = state.items.find((candidate) => candidate.id === button.dataset.ragMenuId && candidate.available !== false);
+  if (!item) return;
+  $("#ragInput").value = itemName(item);
+  $("#ragForm").requestSubmit();
 });
 $("#staffOrders").addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");
