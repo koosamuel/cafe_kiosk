@@ -15,8 +15,7 @@ for file in index.html styles.css app.js rag-assistant.js config.js menu.json te
 done
 
 mkdir -p "$STAGING_DIR/assets"
-cp "$PROJECT_DIR/assets/featured-cafe.png" "$STAGING_DIR/assets/featured-cafe.png"
-cp "$PROJECT_DIR/assets/og-cafe-kiosk.png" "$STAGING_DIR/assets/og-cafe-kiosk.png"
+cp -R "$PROJECT_DIR/assets/." "$STAGING_DIR/assets/"
 
 rm -rf "$OUTPUT_DIR"
 mv "$STAGING_DIR" "$OUTPUT_DIR"

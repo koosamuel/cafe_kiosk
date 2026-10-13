@@ -9,6 +9,7 @@ const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const menu = JSON.parse(fs.readFileSync(path.join(root, "menu.json"), "utf8"));
 const plan = fs.readFileSync(path.join(root, "03_구현계획.md"), "utf8");
+const buildScript = fs.readFileSync(path.join(root, "scripts", "build-static.sh"), "utf8");
 
 test("고객 화면은 푸드 탭과 내부 dessert ID를 호환한다", () => {
   assert.equal(menu.categories.find((category) => category.id === "dessert")?.name, "푸드");
@@ -86,6 +87,7 @@ test("12개 메뉴 카드에 로컬 사진과 데모 출처 안내를 제공한�
   menu.items.forEach((item) => {
     assert.ok(fs.existsSync(path.join(root, "assets", "menu", `${item.id}.jpg`)), `${item.id} image is missing`);
   });
+  assert.match(buildScript, /cp -R "\$PROJECT_DIR\/assets\/\." "\$STAGING_DIR\/assets\/"/);
 });
 
 test("03 구현계획은 현재 범위와 다음 단계를 분리한다", () => {
