@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const assistant = require("../rag-assistant.js");
+const menu = require("../menu.json");
 
 const items = [
   { id: "americano", category_id: "coffee", name: "아메리카노", description: "깔끔한 끝맛", price: 3500, available: true },
@@ -112,6 +113,42 @@ test("메뉴 선택 뒤 따로 입력한 주문 의사를 같은 문맥으로 �
   assert.equal(result.action.type, "pending");
   assert.equal(result.action.itemId, "americano");
   assert.deepEqual(result.action.missingGroups, ["온도", "크기"]);
+});
+
+test("주문 의사 뒤 따로 입력한 메뉴명을 같은 문맥으로 연결한다", () => {
+  const history = [
+    { role: "user", text: "주문하자" },
+    { role: "assistant", text: "담을 메뉴 이름을 말씀해 주세요." },
+  ];
+  const query = assistant.conversationQuery("아메리카노", history, items);
+  assert.equal(query, "주문하자 아메리카노");
+
+  const result = assistant.respond({ message: "아메리카노", items, options: groupedOptions, cart: [], history });
+  assert.equal(result.intent, "clarify");
+  assert.equal(result.action.type, "pending");
+  assert.equal(result.action.itemId, "americano");
+  assert.deepEqual(result.action.missingGroups, ["온도", "크기"]);
+});
+
+test("주문 의사 뒤의 모든 판매 메뉴를 각각의 옵션 단계로 연결한다", () => {
+  const history = [
+    { role: "user", text: "주문하자" },
+    { role: "assistant", text: "담을 메뉴 이름을 말씀해 주세요." },
+  ];
+  menu.items.filter((item) => item.available !== false).forEach((item) => {
+    const result = assistant.respond({ message: item.name, items: menu.items, options: menu.options, cart: [], history });
+    assert.equal(result.intent, "clarify", item.name);
+    assert.equal(result.action.type, "pending", item.name);
+    assert.equal(result.action.itemId, item.id, item.name);
+    assert.deepEqual(result.action.missingGroups, item.category_id === "dessert" ? ["데우기"] : ["온도", "크기"], item.name);
+  });
+});
+
+test("주문 의사 뒤의 비메뉴 입력은 이전 문맥과 합치지 않는다", () => {
+  const history = [{ role: "user", text: "주문하자" }];
+  assert.equal(assistant.conversationQuery("오늘 날씨 알려줘", history, items), "오늘 날씨 알려줘");
+  const result = assistant.respond({ message: "오늘 날씨 알려줘", items, options: groupedOptions, cart: [], history });
+  assert.equal(result.intent, "out_of_scope");
 });
 
 test("전체 취소는 장바구니 초기화 동작을 반환한다", () => {

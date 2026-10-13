@@ -59,6 +59,7 @@
   ];
 
   const SHORT_CONTEXT_PATTERN = /^(네|예|응|그래|좋아|둘\s*다|그걸로|그거|둘\s*모두|주문\s*(?:할게(?:요)?|할래(?:요)?|해\s*줘)|이걸로\s*주문\s*(?:할게(?:요)?|할래(?:요)?)|order\s+it|[sml]|중|대|소|레귤러|라지|샷\s*추가)[.!~]?$/iu;
+  const STANDALONE_ORDER_INTENT_PATTERN = /^(?:주문\s*(?:하자|할게(?:요)?|할래(?:요)?|할까(?:요)?|해\s*줘)|담아\s*줘|이걸로\s*주문\s*(?:할게(?:요)?|할래(?:요)?)|order(?:\s+it)?|let'?s\s+order|i\s+(?:want|would\s+like)\s+to\s+order)[.!~]?$/iu;
 
   const STOP_WORDS = new Set(["메뉴", "음료", "추천", "추천해", "추천해줘", "알려", "알려줘", "주세요", "주문", "담아", "담아줘", "비교", "차이", "가격", "얼마", "뭐가", "어떤", "해줘", "해", "좀"]);
 
@@ -184,10 +185,14 @@
     return englishMatch ? englishWords[englishMatch[1]] : 1;
   }
 
-  function conversationQuery(message, history = []) {
-    if (!SHORT_CONTEXT_PATTERN.test(normalize(message))) return message;
+  function conversationQuery(message, history = [], items = []) {
+    const normalizedMessage = normalize(message);
     const previousUser = [...history].reverse().find((entry) => entry?.role === "user" && entry.text);
-    return previousUser ? `${previousUser.text} ${message}` : message;
+    if (!previousUser) return message;
+    if (SHORT_CONTEXT_PATTERN.test(normalizedMessage)) return `${previousUser.text} ${message}`;
+    const previousWasOrderIntent = STANDALONE_ORDER_INTENT_PATTERN.test(normalize(previousUser.text));
+    const currentNamesMenu = explicitlyNamedItems(items, message).length > 0;
+    return previousWasOrderIntent && currentNamesMenu ? `${previousUser.text} ${message}` : message;
   }
 
   function requestedOptionIds(message, options = []) {
@@ -336,7 +341,7 @@
   }
 
   function respond({ message, items = [], options = [], cart = [], history = [], pendingOrder = null, orderType = "takeout", language = "ko" }) {
-    const contextualMessage = conversationQuery(message, history);
+    const contextualMessage = conversationQuery(message, history, items);
     const text = normalize(contextualMessage);
     const intent = inferIntent(text);
     const orderTypeLabel = orderType === "dine_in" ? "매장" : "포장";
