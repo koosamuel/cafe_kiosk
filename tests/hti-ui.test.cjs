@@ -92,6 +92,7 @@ test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 주�
   assert.doesNotMatch(app, /class="badge"/);
   assert.doesNotMatch(app, /class="category-dot"/);
   assert.doesNotMatch(app, /class="add-symbol"/);
+  assert.match(css, /\.menu-card-image \{[^}]*width: min\(100%, 210px\)/);
   assert.match(app, /function prefillRagInput\(itemId\)/);
   assert.match(app, /input\.value = itemName\(item\)/);
   assert.match(app, /prefillRagInput\(chatButton\.dataset\.chatMenuId\)/);

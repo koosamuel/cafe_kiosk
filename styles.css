@@ -301,8 +301,8 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   text-align: left;
   cursor: pointer;
 }
-.menu-card-image { width: 100%; height: auto; aspect-ratio: 300 / 313; object-fit: cover; border-radius: 18px; background: #f3eee5; box-shadow: 0 7px 18px rgba(60,44,34,.12); }
-.menu-card-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 14px 4px 4px; }
+.menu-card-image { width: min(100%, 210px); height: auto; aspect-ratio: 300 / 313; margin-inline: auto; object-fit: cover; border-radius: 18px; background: #f3eee5; box-shadow: 0 7px 18px rgba(60,44,34,.12); }
+.menu-card-copy { display: flex; width: min(100%, 210px); min-width: 0; flex-direction: column; align-items: flex-start; margin-inline: auto; padding: 14px 4px 4px; }
 .menu-card:hover { transform: translateY(-3px); border-color: #b8ad9d; box-shadow: 0 14px 30px rgba(60,44,34,.1); }
 .menu-card:active { transform: scale(.985); }
 .menu-card.rag-focused {
@@ -537,8 +537,8 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .toolbar-category-tabs { width: 100%; max-width: none; justify-content: flex-start; }
   .menu-grid { grid-template-columns: 1fr; }
   .menu-card-select { padding: 14px; }
-  .menu-card-image { width: 100%; height: auto; border-radius: 15px; }
-  .menu-card-copy { padding: 12px 2px 2px; }
+  .menu-card-image { width: min(100%, 190px); height: auto; border-radius: 15px; }
+  .menu-card-copy { width: min(100%, 190px); padding: 12px 2px 2px; }
   .modal { padding: 25px 20px; }
   .rag-modal { padding: 0; }
   .rag-heading { padding: 18px 20px; }
