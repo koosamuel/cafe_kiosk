@@ -11,6 +11,7 @@ const menu = JSON.parse(fs.readFileSync(path.join(root, "menu.json"), "utf8"));
 const officialCatalog = JSON.parse(fs.readFileSync(path.join(root, "reference", "starbucks-official-menu-2026-10-14.json"), "utf8"));
 const plan = fs.readFileSync(path.join(root, "03_구현계획.md"), "utf8");
 const buildScript = fs.readFileSync(path.join(root, "scripts", "build-static.sh"), "utf8");
+const serviceWorker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 
 test("고객 화면은 푸드 탭과 내부 dessert ID를 호환한다", () => {
   assert.equal(menu.categories.find((category) => category.id === "dessert")?.name, "푸드");
@@ -89,6 +90,14 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
   assert.match(app, /전체화면을 종료하지 못했습니다/);
   assert.match(app, /event\.key === "Escape"/);
   assert.match(css, /\.fullscreen-button\.is-active \{[\s\S]*position: fixed/);
+});
+
+test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
+  assert.match(html, /styles\.css\?v=45/);
+  assert.match(html, /app\.js\?v=45/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=45"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v45"/);
+  assert.match(serviceWorker, /app\.js\?v=45/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
