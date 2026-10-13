@@ -26,6 +26,7 @@ const state = {
   orderType: "takeout",
   cart: [],
   activeItem: null,
+  editingCartKey: null,
   optionQuantity: 1,
   usingRemoteData: false,
   staffDemo: false,
@@ -61,7 +62,7 @@ const menuImageSources = {
   cheesecake: "./assets/menu/cheesecake.jpg",
 };
 const itemEnglish = {
-  americano: ["Americano", "Nutty chocolate aroma with a clean finish"],
+  americano: ["Americano", "Deep espresso with water for a clean finish"],
   "cafe-latte": ["Cafe Latte", "A smooth balance of espresso and milk"],
   "vanilla-latte": ["Vanilla Latte", "Gentle vanilla with rich espresso"],
   "flat-white": ["Flat White", "Bold ristretto with silky milk foam"],
@@ -80,8 +81,13 @@ const optionEnglish = {
   "warm-dessert": "Warmed", "plain-dessert": "As Is",
 };
 const groupEnglish = { "온도": "Temperature", "크기": "Size", "추가": "Extras", "데우기": "Heating" };
+const itemKoreanDescriptionOverrides = {
+  americano: "진한 에스프레소에 물을 더한 깊고 깔끔한 풍미",
+};
 const itemName = (item) => state.language === "en" ? itemEnglish[item.id]?.[0] || item.name : item.name;
-const itemDescription = (item) => state.language === "en" ? itemEnglish[item.id]?.[1] || item.description : item.description;
+const itemDescription = (item) => state.language === "en"
+  ? itemEnglish[item.id]?.[1] || item.description
+  : itemKoreanDescriptionOverrides[item.id] || item.description;
 const optionName = (option) => state.language === "en" ? optionEnglish[option.id] || option.name : option.name;
 const optionGroupName = (name) => state.language === "en" ? groupEnglish[name] || name : name;
 
@@ -397,7 +403,7 @@ function renderMenu() {
     const focusClass = focusIndex >= 0 ? `rag-focused rag-focus-${state.ragFocusLevel}` : "";
     return `
     <article class="menu-card ${focusClass}" data-menu-id="${escapeHtml(item.id)}">
-      <button class="menu-card-select" type="button" data-menu-option-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 옵션 선택`, `Choose options for ${itemName(item)}`))}">
+      <button class="menu-card-select" type="button" data-menu-order-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 채팅 주문 시작`, `Start a chat order for ${itemName(item)}`))}">
         ${menuImageSources[item.id] ? `<img class="menu-card-image" src="${menuImageSources[item.id]}" alt="${escapeHtml(itemName(item))}" width="300" height="313" loading="lazy" decoding="async" />` : ""}
         <span class="menu-card-copy">
           <h3>${escapeHtml(itemName(item))}</h3>
@@ -435,14 +441,16 @@ function groupOptions(item) {
   }, {});
 }
 
-function openOptions(itemId) {
+function openOptions(itemId, cartEntryKey = null) {
   const item = state.items.find((candidate) => candidate.id === itemId);
   if (!item) return;
+  const cartEntry = cartEntryKey ? state.cart.find((entry) => entry.key === cartEntryKey) : null;
   state.activeItem = item;
-  state.optionQuantity = 1;
+  state.editingCartKey = cartEntry?.key || null;
+  state.optionQuantity = cartEntry?.quantity || 1;
   $("#optionItemName").textContent = itemName(item);
   $("#optionItemDescription").textContent = itemDescription(item);
-  $("#optionQuantity").textContent = "1";
+  $("#optionQuantity").textContent = state.optionQuantity;
 
   const groups = groupOptions(item);
   $("#optionGroups").innerHTML = Object.entries(groups).map(([groupName, options]) => {
@@ -451,14 +459,18 @@ function openOptions(itemId) {
       <fieldset class="option-group" data-option-group="${escapeHtml(groupName)}">
         <legend>${escapeHtml(optionGroupName(groupName))}${isMultiple ? tr(" (선택)", " (optional)") : ""}</legend>
         <div class="option-choice-grid">
-          ${options.map((option, index) => `
+          ${options.map((option, index) => {
+            const selected = cartEntry
+              ? cartEntry.options.some((entryOption) => entryOption.id === option.id)
+              : !isMultiple && index === 0;
+            return `
             <label class="option-choice">
               <input type="${isMultiple ? "checkbox" : "radio"}" name="option-${escapeHtml(groupName)}"
-                value="${escapeHtml(option.id)}" ${!isMultiple && index === 0 ? "checked" : ""} />
+                value="${escapeHtml(option.id)}" ${selected ? "checked" : ""} />
               <span>${escapeHtml(optionName(option))}</span>
               <small>${option.price_delta ? `+${won(option.price_delta)}` : tr("추가금 없음", "No extra charge")}</small>
             </label>
-          `).join("")}
+          `; }).join("")}
         </div>
       </fieldset>`;
   }).join("");
@@ -476,7 +488,8 @@ function selectedUnitPrice() {
 }
 
 function updateAddButtonPrice() {
-  $("#addToCartButton").textContent = `${won(selectedUnitPrice() * state.optionQuantity)} · ${tr("장바구니에 담기", "Add to Cart")}`;
+  const actionLabel = state.editingCartKey ? tr("변경사항 적용", "Apply Changes") : tr("장바구니에 담기", "Add to Cart");
+  $("#addToCartButton").textContent = `${won(selectedUnitPrice() * state.optionQuantity)} · ${actionLabel}`;
 }
 
 function cartKey(itemId, options) {
@@ -486,9 +499,14 @@ function cartKey(itemId, options) {
 function addActiveItemToCart() {
   if (!state.activeItem) return;
   const options = selectedDialogOptions();
+  const editingKey = state.editingCartKey;
+  if (editingKey) state.cart = state.cart.filter((entry) => entry.key !== editingKey);
   addItemToCart(state.activeItem, options, state.optionQuantity);
+  state.editingCartKey = null;
   $("#optionDialog").close();
-  toast(tr(`${state.activeItem.name}을(를) 담았습니다.`, `${itemName(state.activeItem)} added to cart.`));
+  toast(editingKey
+    ? tr(`${state.activeItem.name} 옵션을 변경했습니다.`, `${itemName(state.activeItem)} options updated.`)
+    : tr(`${state.activeItem.name}을(를) 담았습니다.`, `${itemName(state.activeItem)} added to cart.`));
 }
 
 function addItemToCart(item, options, quantity = 1) {
@@ -528,10 +546,10 @@ function renderCart() {
   $(".cart-heading").dataset.mobileLabel = count ? tr(`${count}개 메뉴`, `${count} item${count === 1 ? "" : "s"}`) : tr("장바구니가 비었어요", "Cart is empty");
   $("#cartItems").innerHTML = state.cart.length ? state.cart.map((entry) => `
     <article class="cart-item">
-      <div class="cart-item-head">
+      <button class="cart-item-head cart-item-edit" type="button" data-cart-edit="${escapeHtml(entry.key)}" aria-label="${escapeHtml(tr(`${entry.item.name} 옵션 수정`, `Edit options for ${itemName(entry.item)}`))}">
         <div><h3>${escapeHtml(itemName(entry.item))}</h3><p>${escapeHtml(entry.options.map(optionName).join(" · ") || tr("기본", "Default"))}</p></div>
         <strong>${won(entry.unitPrice * entry.quantity)}</strong>
-      </div>
+      </button>
       <div class="cart-item-actions">
         <div class="stepper">
           <button type="button" data-cart-action="decrease" data-cart-key="${escapeHtml(entry.key)}" aria-label="${escapeHtml(entry.item.name)} 수량 줄이기">−</button>
@@ -832,7 +850,7 @@ function appendRagMessage(role, text, retrieved = []) {
     <span class="rag-message-label">${role === "user" ? tr("나", "You") : tr("주문 도우미", "Order Assistant")}</span>
     <p>${escapeHtml(text)}</p>
     ${retrieved.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${retrieved.map((item) => `
-      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 정보 요청 보내기`, `Ask about ${itemName(item)}`))}">
+      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 주문 선택`, `Select ${itemName(item)} to order`))}">
         <span>${escapeHtml(itemName(item))}</span><strong>${won(item.price)}</strong>
       </button>`).join("")}</div>` : ""}`;
   const messages = $("#ragMessages");
@@ -1047,6 +1065,13 @@ function submitRagMessage(event) {
   }
 }
 
+function submitMenuOrder(itemId) {
+  const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
+  if (!item || state.ragSending) return;
+  $("#ragInput").value = tr(`${item.name} 주문할게`, `Order ${itemName(item)}`);
+  $("#ragForm").requestSubmit();
+}
+
 function registerWebMcpTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;
@@ -1120,8 +1145,8 @@ $("#categoryTabs").addEventListener("click", (event) => {
 });
 
 $("#menuGrid").addEventListener("click", (event) => {
-  const optionButton = event.target.closest("[data-menu-option-id]");
-  if (optionButton) openOptions(optionButton.dataset.menuOptionId);
+  const orderButton = event.target.closest("[data-menu-order-id]");
+  if (orderButton) submitMenuOrder(orderButton.dataset.menuOrderId);
 });
 
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
@@ -1137,6 +1162,12 @@ $("#increaseQuantity").addEventListener("click", () => { state.optionQuantity = 
 $("#optionForm").addEventListener("submit", (event) => { event.preventDefault(); addActiveItemToCart(); });
 
 $("#cartItems").addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-cart-edit]");
+  if (editButton) {
+    const entry = state.cart.find((candidate) => candidate.key === editButton.dataset.cartEdit);
+    if (entry) openOptions(entry.item.id, entry.key);
+    return;
+  }
   const button = event.target.closest("[data-cart-action]");
   if (button) updateCartItem(button.dataset.cartKey, button.dataset.cartAction);
 });
@@ -1177,10 +1208,7 @@ $(".rag-prompts").addEventListener("click", (event) => {
 $("#ragMessages").addEventListener("click", (event) => {
   const button = event.target.closest("[data-rag-menu-id]");
   if (!button) return;
-  const item = state.items.find((candidate) => candidate.id === button.dataset.ragMenuId && candidate.available !== false);
-  if (!item) return;
-  $("#ragInput").value = itemName(item);
-  $("#ragForm").requestSubmit();
+  submitMenuOrder(button.dataset.ragMenuId);
 });
 $("#staffOrders").addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");

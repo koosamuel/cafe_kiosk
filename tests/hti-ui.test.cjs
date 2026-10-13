@@ -38,11 +38,30 @@ test("유효한 메뉴 ID만 화면 동기화하고 카드에 노랑·그린·�
   assert.match(css, /\.menu-card\.rag-focus-strong \{ border-color: var\(--highlight-red\);/);
 });
 
-test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명을 입력하고 질문을 전송한다", () => {
-  assert.match(app, /candidate\.id === button\.dataset\.ragMenuId && candidate\.available !== false/);
-  assert.match(app, /\$\("#ragInput"\)\.value = itemName\(item\)/);
+test("인라인 주문 도우미의 근거 메뉴 클릭은 명시적인 주문 문장을 전송한다", () => {
+  assert.match(app, /function submitMenuOrder\(itemId\)/);
+  assert.match(app, /candidate\.id === itemId && candidate\.available !== false/);
+  assert.match(app, /\$\("#ragInput"\)\.value = tr\(`\$\{item\.name\} 주문할게`/);
   assert.match(app, /\$\("#ragForm"\)\.requestSubmit\(\)/);
   assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
+});
+
+test("아메리카노 설명은 실제 초콜릿 첨가로 오해되지 않는 문구를 사용한다", () => {
+  const americano = menu.items.find((item) => item.id === "americano");
+  assert.equal(americano?.description, "진한 에스프레소에 물을 더한 깊고 깔끔한 풍미");
+  assert.doesNotMatch(americano?.description || "", /초콜릿/);
+  assert.match(app, /itemKoreanDescriptionOverrides/);
+  assert.match(app, /americano: "진한 에스프레소에 물을 더한 깊고 깔끔한 풍미"/);
+});
+
+test("주문 내역의 메뉴를 누르면 기존 옵션과 수량을 불러와 수정한다", () => {
+  assert.match(app, /data-cart-edit=/);
+  assert.match(app, /openOptions\(entry\.item\.id, entry\.key\)/);
+  assert.match(app, /state\.editingCartKey = cartEntry\?\.key \|\| null/);
+  assert.match(app, /cartEntry\.options\.some/);
+  assert.match(app, /변경사항 적용/);
+  assert.match(app, /state\.cart = state\.cart\.filter\(\(entry\) => entry\.key !== editingKey\)/);
+  assert.match(css, /\.cart-item-edit:focus-visible/);
 });
 
 test("복합 장바구니 액션은 모든 항목을 순서대로 적용한다", () => {
@@ -97,8 +116,9 @@ test("검색창을 제거하고 메뉴 제목 옆에 카테고리 기능을 배�
   assert.match(html, /id="categoryTabs"[^>]+toolbar-category-tabs/);
 });
 
-test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 옵션 선택을 연다", () => {
-  assert.match(app, /data-menu-option-id=/);
+test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 채팅 주문을 시작한다", () => {
+  assert.match(app, /data-menu-order-id=/);
+  assert.doesNotMatch(app, /data-menu-option-id=/);
   assert.doesNotMatch(app, /data-chat-menu-id=/);
   assert.doesNotMatch(app, /data-add-menu-id=/);
   assert.match(app, /class="menu-card-image"/);
@@ -108,7 +128,9 @@ test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 옵�
   assert.match(css, /\.menu-grid \{[^}]*grid-template-columns: repeat\(3,/);
   assert.match(css, /\.menu-card-image \{[^}]*width: min\(100%, 210px\)/);
   assert.doesNotMatch(app, /function prefillRagInput\(itemId\)/);
-  assert.match(app, /openOptions\(optionButton\.dataset\.menuOptionId\)/);
+  assert.match(app, /submitMenuOrder\(orderButton\.dataset\.menuOrderId\)/);
+  assert.match(app, /tr\(`\$\{item\.name\} 주문할게`, `Order \$\{itemName\(item\)\}`\)/);
+  assert.match(app, /submitMenuOrder\(button\.dataset\.ragMenuId\)/);
 });
 
 test("12개 주문 메뉴와 공식 316개 카탈로그 감사를 구분한다", () => {

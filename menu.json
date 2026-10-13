@@ -7,7 +7,7 @@
     { "id": "dessert", "name": "푸드", "sort_order": 4 }
   ],
   "items": [
-    { "id": "americano", "category_id": "coffee", "name": "아메리카노", "description": "고소한 초콜릿 향과 깔끔한 끝맛", "price": 3500, "badge": "BEST", "available": true },
+    { "id": "americano", "category_id": "coffee", "name": "아메리카노", "description": "진한 에스프레소에 물을 더한 깊고 깔끔한 풍미", "price": 3500, "badge": "BEST", "available": true },
     { "id": "cafe-latte", "category_id": "coffee", "name": "카페 라테", "description": "에스프레소와 부드러운 우유의 균형", "price": 4300, "badge": "추천", "available": true },
     { "id": "vanilla-latte", "category_id": "coffee", "name": "바닐라 라테", "description": "은은한 바닐라와 진한 에스프레소", "price": 4800, "badge": "", "available": true },
     { "id": "flat-white", "category_id": "coffee", "name": "플랫 화이트", "description": "묵직한 리스트레토와 고운 우유 거품", "price": 4700, "badge": "NEW", "available": true },

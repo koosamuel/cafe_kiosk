@@ -408,7 +408,8 @@
       return { intent, answer: "장바구니의 모든 메뉴를 비웠습니다.", action: { type: "clear" }, retrieved: [] };
     }
 
-    if (/주문\s*(할게|확정|완료)|결제\s*(할게|진행)|이대로\s*(주문|결제)/u.test(text)) {
+    if (/주문\s*(할게|확정|완료)|결제\s*(할게|진행)|이대로\s*(주문|결제)/u.test(text)
+      && explicitlyNamedItems(items, text).length === 0) {
       if (!cart.length) return { intent: "clarify", answer: "장바구니가 비어 있습니다. 먼저 메뉴를 선택해 주세요.", retrieved: [] };
       return { intent: "checkout", answer: "장바구니 내용을 확인한 뒤 주문을 접수해 주세요.", action: { type: "checkout" }, retrieved: [] };
     }

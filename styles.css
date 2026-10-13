@@ -345,6 +345,9 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .cart-empty span { display: block; margin-bottom: 10px; font-size: 38px; filter: grayscale(1); }
 .cart-item { padding: 15px 0; border-bottom: 1px solid var(--paper-2); }
 .cart-item-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.cart-item-edit { width: 100%; padding: 7px; margin: -7px; border: 0; border-radius: 12px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.cart-item-edit:hover { background: var(--paper); }
+.cart-item-edit:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
 .cart-item h3 { margin: 0 0 5px; font-size: 16px; }
 .cart-item p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .cart-item-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 11px; }

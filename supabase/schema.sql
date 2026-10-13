@@ -462,7 +462,7 @@ insert into public.categories (id, name, sort_order) values
 on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
 
 insert into public.menu_items (id, category_id, name, description, price, badge, sort_order) values
-  ('americano', 'coffee', '아메리카노', '고소한 초콜릿 향과 깔끔한 끝맛', 3500, 'BEST', 1),
+  ('americano', 'coffee', '아메리카노', '진한 에스프레소에 물을 더한 깊고 깔끔한 풍미', 3500, 'BEST', 1),
   ('cafe-latte', 'coffee', '카페 라테', '에스프레소와 부드러운 우유의 균형', 4300, '추천', 2),
   ('vanilla-latte', 'coffee', '바닐라 라테', '은은한 바닐라와 진한 에스프레소', 4800, '', 3),
   ('flat-white', 'coffee', '플랫 화이트', '묵직한 리스트레토와 고운 우유 거품', 4700, 'NEW', 4),

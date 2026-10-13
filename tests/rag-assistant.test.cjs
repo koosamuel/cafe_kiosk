@@ -163,6 +163,14 @@ test("주문 확인 발화는 결제 확인 단계로 이동한다", () => {
   assert.deepEqual(result.action, { type: "checkout" });
 });
 
+test("메뉴명이 포함된 주문할게 발화는 결제가 아니라 메뉴 주문으로 처리한다", () => {
+  const result = assistant.respond({ message: "아메리카노 주문할게", items, options: groupedOptions, cart: [] });
+  assert.equal(result.intent, "clarify");
+  assert.equal(result.action.type, "pending");
+  assert.equal(result.action.itemId, "americano");
+  assert.deepEqual(result.action.missingGroups, ["온도", "크기"]);
+});
+
 test("빈 장바구니 결제 요청은 메뉴 선택을 안내한다", () => {
   const result = assistant.respond({ message: "결제할게요", items, options: groupedOptions, cart: [] });
   assert.equal(result.intent, "clarify");
