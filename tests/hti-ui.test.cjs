@@ -62,6 +62,22 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
   assert.match(css, /\.fullscreen-button\.is-active \{[\s\S]*position: fixed/);
 });
 
+test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
+  assert.match(html, /id="staffPin"[^>]+value="111111"/);
+  assert.match(html, /id="staffPinForm"/);
+  assert.doesNotMatch(html, /id="staffEmail"/);
+  assert.doesNotMatch(html, /운영자 로그인/);
+  assert.match(app, /function unlockStaffBoard/);
+  assert.match(app, /function lockStaffBoard/);
+});
+
+test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이며 전체화면 왼쪽에 화면 탭을 둔다", () => {
+  assert.ok(html.indexOf('class="menu-panel"') < html.indexOf('class="assistant-panel'));
+  assert.ok(html.indexOf('class="assistant-panel') < html.indexOf('class="cart-panel"'));
+  assert.ok(html.indexOf('class="page-tabs header-page-tabs"') < html.indexOf('id="fullscreenButton"'));
+  assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
+});
+
 test("03 구현계획은 현재 범위와 다음 단계를 분리한다", () => {
   assert.match(plan, /12개.*현재/);
   assert.match(plan, /단계 A — 이번 구현/);

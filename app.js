@@ -1,6 +1,7 @@
 const CONFIG = window.CAFE_CONFIG || {};
 const IS_CONFIGURED = Boolean(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_PUBLISHABLE_KEY && window.supabase);
 const USE_REMOTE = IS_CONFIGURED && CONFIG.DEMO_MODE === false;
+const PUBLIC_ORDER_BOARD = CONFIG.PUBLIC_ORDER_BOARD === true;
 const db = USE_REMOTE
   ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_PUBLISHABLE_KEY)
   : null;
@@ -28,9 +29,10 @@ const state = {
   activeItem: null,
   optionQuantity: 1,
   usingRemoteData: false,
-  staffSession: null,
   staffDemo: false,
   staffOrders: [],
+  staffPin: "",
+  staffPollTimer: null,
   ragMessages: [],
   ragPendingOrder: null,
   ragFocusedMenuIds: [],
@@ -644,38 +646,40 @@ function resetOrder() {
 }
 
 async function openStaff() {
-  $("#staffLoginError").textContent = "";
-  if (state.staffSession || state.staffDemo) {
-    await showStaffBoard();
-  } else {
-    $("#staffLoginSection").hidden = false;
-    $("#staffBoardSection").hidden = true;
-  }
+  $("#staffPinError").textContent = "";
+  $("#staffPinSection").hidden = false;
+  $("#staffBoardSection").hidden = true;
   $("#staffDialog").showModal();
+  $("#staffPin").focus();
+  $("#staffPin").select();
 }
 
-async function staffLogin(event) {
+async function unlockStaffBoard(event) {
   event.preventDefault();
-  if (!db) {
-    $("#staffLoginError").textContent = "Supabase 설정 전에는 데모 운영판을 이용해 주세요.";
+  const pin = $("#staffPin").value.trim();
+  if (!/^\d{6}$/.test(pin)) {
+    $("#staffPinError").textContent = "운영 번호 6자리를 입력해 주세요.";
     return;
   }
-  const { data, error } = await db.auth.signInWithPassword({
-    email: $("#staffEmail").value.trim(),
-    password: $("#staffPassword").value,
-  });
-  if (error) {
-    $("#staffLoginError").textContent = "이메일 또는 비밀번호를 확인해 주세요.";
+  state.staffPin = pin;
+  state.staffDemo = !db || !PUBLIC_ORDER_BOARD;
+  $("#staffBoardNotice").textContent = state.staffDemo
+    ? "로컬 샘플 주문판입니다. 상태 변경은 이 브라우저에만 반영됩니다."
+    : "공용 번호로 여는 데모 운영판입니다. 최근 24시간의 실제 접수 주문을 조회하고 다음 단계로 변경할 수 있습니다.";
+  if (state.staffDemo && pin !== "111111") {
+    state.staffPin = "";
+    $("#staffPinError").textContent = "운영 번호를 확인해 주세요.";
     return;
   }
-  state.staffSession = data.session;
-  await showStaffBoard();
-}
-
-async function showStaffBoard() {
-  $("#staffLoginSection").hidden = true;
+  const loaded = await loadStaffOrders();
+  if (!loaded) {
+    state.staffPin = "";
+    $("#staffPinError").textContent = "운영 번호가 올바르지 않거나 주문판을 불러올 수 없습니다.";
+    return;
+  }
+  $("#staffPinSection").hidden = true;
   $("#staffBoardSection").hidden = false;
-  await loadStaffOrders();
+  startStaffPolling();
 }
 
 async function loadStaffOrders() {
@@ -687,19 +691,31 @@ async function loadStaffOrders() {
       ];
     }
     renderStaffOrders();
-    return;
+    return true;
   }
-  const { data, error } = await db.from("orders")
-    .select("id,order_number,order_type,payment_method,status,total_amount,created_at,order_items(id,item_name,quantity,unit_price,option_summary)")
-    .in("status", ["received", "preparing", "ready"])
-    .order("created_at", { ascending: true });
+  const { data, error } = await db.rpc("list_demo_kiosk_orders", {
+    p_operator_pin: state.staffPin,
+  });
   if (error) {
     console.error(error);
-    toast("주문 목록을 불러오지 못했습니다.");
-    return;
+    return false;
   }
-  state.staffOrders = data || [];
+  state.staffOrders = Array.isArray(data) ? data : [];
   renderStaffOrders();
+  return true;
+}
+
+function startStaffPolling() {
+  stopStaffPolling();
+  if (state.staffDemo) return;
+  state.staffPollTimer = window.setInterval(() => {
+    if ($("#staffDialog").open && !$("#staffBoardSection").hidden) loadStaffOrders();
+  }, 5000);
+}
+
+function stopStaffPolling() {
+  if (state.staffPollTimer) window.clearInterval(state.staffPollTimer);
+  state.staffPollTimer = null;
 }
 
 function renderStaffOrders() {
@@ -727,7 +743,8 @@ async function updateOrderStatus(orderId, nextStatus) {
     renderStaffOrders();
     return;
   }
-  const { error } = await db.rpc("advance_kiosk_order", {
+  const { error } = await db.rpc("advance_demo_kiosk_order", {
+    p_operator_pin: state.staffPin,
     p_order_id: orderId,
     p_next_status: nextStatus,
   });
@@ -735,12 +752,16 @@ async function updateOrderStatus(orderId, nextStatus) {
   else await loadStaffOrders();
 }
 
-async function staffLogout() {
-  if (db && state.staffSession) await db.auth.signOut();
-  state.staffSession = null;
+function lockStaffBoard({ closeDialog = true } = {}) {
+  stopStaffPolling();
   state.staffDemo = false;
+  state.staffPin = "";
+  state.staffOrders = [];
   $("#staffBoardSection").hidden = true;
-  $("#staffLoginSection").hidden = false;
+  $("#staffPinSection").hidden = false;
+  $("#staffPin").value = "111111";
+  $("#staffPinError").textContent = "";
+  if (closeDialog && $("#staffDialog").open) $("#staffDialog").close();
 }
 
 function clearRagFocus({ hideEvidence = false } = {}) {
@@ -1146,9 +1167,11 @@ $("#checkoutButton").addEventListener("click", openCheckout);
 $("#checkoutForm").addEventListener("submit", placeOrder);
 $("#newOrderButton").addEventListener("click", resetOrder);
 $("#staffButton").addEventListener("click", openStaff);
-$("#staffLoginForm").addEventListener("submit", staffLogin);
-$("#demoStaffButton").addEventListener("click", async () => { state.staffDemo = true; await showStaffBoard(); });
-$("#staffLogoutButton").addEventListener("click", staffLogout);
+$("#staffPinForm").addEventListener("submit", unlockStaffBoard);
+$("#staffRefreshButton").addEventListener("click", async () => {
+  if (!await loadStaffOrders()) toast("주문 목록을 새로고침하지 못했습니다.");
+});
+$("#staffLockButton").addEventListener("click", () => lockStaffBoard());
 $$(`[data-page-tab]`).forEach((button) => button.addEventListener("click", () => switchPageTab(button.dataset.pageTab)));
 $("#feedbackForm").addEventListener("submit", submitFeedback);
 $("#feedbackHistory").addEventListener("click", (event) => {
@@ -1201,21 +1224,16 @@ document.addEventListener("keydown", (event) => {
 }, true);
 $$(`[data-close]`).forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
 $$(`dialog`).forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog && dialog.id !== "successDialog") dialog.close(); }));
+$("#staffDialog").addEventListener("close", () => lockStaffBoard({ closeDialog: false }));
 
 if (db) {
-  db.auth.getSession().then(({ data }) => { state.staffSession = data.session; });
-  db.auth.onAuthStateChange((_event, session) => { state.staffSession = session; });
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
-  db.channel("cafe-orders").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-    if (state.staffSession && $("#staffDialog").open) loadStaffOrders();
-  }).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=28").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=29").catch(console.error));
 
 renderCart();
 applyLanguage();
-$("#demoStaffButton").hidden = USE_REMOTE;
 loadMenu().then(registerWebMcpTools).catch((error) => {
   console.error(error);
   setConnection("메뉴 오류", "offline");

@@ -1,6 +1,6 @@
 # 모닝브루 카페 키오스크
 
-태블릿에서 메뉴 선택·옵션·장바구니·주문 접수를 처리하고, 운영자 화면에서 주문 상태를 실시간으로 관리하는 정적 웹 키오스크입니다.
+태블릿에서 메뉴 선택·옵션·장바구니·주문 접수를 처리하고, 데모 운영판에서 최근 실제 주문 상태를 관리하는 정적 웹 키오스크입니다.
 
 ## 구조
 
@@ -13,8 +13,8 @@ GitHub Pages 정적 클라이언트
           ↓
 Supabase
 ├─ Postgres: 메뉴·옵션·주문·주문 항목
-├─ Auth: 운영자 로그인
-├─ RLS: 공개 읽기와 운영자 권한 분리
+├─ Auth/RLS: 실제 운영용 사용자 권한 보존
+├─ Demo RPC: 공용 번호로 최근 활성 주문만 조회·상태 전환
 ├─ RPC: 서버 검증 가격 계산과 주문 생성
 └─ Realtime: 운영자 주문판 갱신
 ```
@@ -27,7 +27,8 @@ Supabase
 - HOT/ICE, 크기, 샷·디카페인·오트 밀크 등 옵션
 - 장바구니 수량 변경과 포장/매장 선택
 - 카드 또는 카운터 결제 요청과 주문번호 발급
-- 운영자용 `접수 → 제조 중 → 픽업 대기 → 완료` 주문판
+- 아이디 없이 미리 입력된 공용 운영 번호로 여는 `접수 → 제조 중 → 픽업 대기 → 완료` 데모 주문판
+- 최근 24시간의 실제 Supabase 활성 주문 조회와 5초 폴링 갱신
 - Supabase 미설정 상태에서도 확인할 수 있는 데모 모드
 - 태블릿·모바일 반응형 화면과 PWA 정적 자산 캐시
 - 상단 버튼으로 전체화면에 진입하고 고정된 종료 버튼 또는 `Esc`로 해제하며 브라우저별 API 차이를 처리
@@ -70,20 +71,23 @@ HTI·UX·UI 통합 기준, 현재 구현 범위와 162개 카탈로그·219문�
 
 1. 카페용 Supabase 프로젝트를 새로 만듭니다.
 2. SQL Editor에서 `supabase/schema.sql` 전체를 실행합니다.
-3. Authentication에서 운영자 사용자를 생성합니다.
-4. `schema.sql` 마지막의 운영자 등록 예시에서 이메일을 바꿔 실행합니다.
-5. `config.js`에 Project URL과 **Publishable Key**를 입력하고 `DEMO_MODE`를 `false`로 바꿉니다.
-6. 일반 화면 주문과 운영자 로그인을 각각 시험합니다.
+3. 데모 운영판을 사용할 때는 `202610130004_demo_operator_pin.sql` 마이그레이션을 적용합니다.
+4. `config.js`에 Project URL과 **Publishable Key**를 입력하고 `DEMO_MODE`를 `false`, `PUBLIC_ORDER_BOARD`를 `true`로 설정합니다.
+5. 일반 화면에서 주문을 만든 뒤 공용 번호 주문판에서 조회·상태 전환을 시험합니다.
+6. 실제 운영으로 전환할 때는 Authentication 사용자를 만들고 `staff_profiles` 권한과 RLS를 검증한 뒤 공용 번호 모드를 제거합니다.
 
 ```js
 window.CAFE_CONFIG = {
   SUPABASE_URL: "https://YOUR_PROJECT.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "YOUR_PUBLISHABLE_KEY",
   DEMO_MODE: false,
+  PUBLIC_ORDER_BOARD: true,
 };
 ```
 
 Publishable Key는 RLS를 전제로 브라우저에서 사용하는 공개 식별자입니다. 데이터베이스 비밀번호, Secret Key, `service_role` 키는 `config.js`나 GitHub 저장소에 넣지 않습니다.
+
+공용 운영 번호는 발표 데모 편의를 위한 공유 잠금장치일 뿐 사용자별 인증이 아닙니다. RPC는 최근 24시간 활성 주문과 순차 상태 전환만 허용하지만, 번호를 아는 누구나 주문 상태를 바꿀 수 있으므로 실제 매장 운영에는 사용하지 않습니다.
 
 ## 공동 작업
 
@@ -111,6 +115,7 @@ chmod +x scripts/build-static.sh
 ## 운영 전 확인
 
 - 실제 메뉴명·가격·품절 상태 반영
+- 발표 후 `PUBLIC_ORDER_BOARD` 비활성화 및 공용 번호 자동 입력 제거
 - 운영자 계정과 `staff_profiles` 권한 확인
 - 익명 사용자가 주문 목록을 읽거나 수정할 수 없는지 확인
 - 서로 다른 두 기기에서 주문 접수와 Realtime 갱신 확인

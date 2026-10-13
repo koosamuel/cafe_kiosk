@@ -192,9 +192,10 @@ begin
     return jsonb_build_object('id', v_order_id, 'order_number', v_order_number, 'total_amount', v_total, 'status', 'received', 'duplicate', true);
   end if;
 
+  v_total := 0;
   v_order_number := lpad(nextval('public.cafe_order_number_seq')::text, 4, '0');
-  insert into public.orders (request_id, order_number, order_type, payment_method)
-  values (p_request_id, v_order_number, p_order_type, p_payment_method)
+  insert into public.orders (request_id, order_number, order_type, payment_method, total_amount)
+  values (p_request_id, v_order_number, p_order_type, p_payment_method, 0)
   on conflict (request_id) do nothing
   returning id into v_order_id;
 
