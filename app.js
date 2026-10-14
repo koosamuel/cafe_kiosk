@@ -38,6 +38,7 @@ const state = {
   ragFocusedMenuIds: [],
   ragFocusLevel: "medium",
   preserveCategoryOnNextRagSubmit: false,
+  ignoreHistoryOnNextRagSubmit: false,
   ragRequestId: 0,
   ragSending: false,
   pendingOrder: null,
@@ -1013,9 +1014,9 @@ function englishAssistantAnswer(result) {
   return "I can help with menu recommendations, prices, comparisons, and cart requests.";
 }
 
-function sendRagMessage(message, { preserveCategory = false } = {}) {
+function sendRagMessage(message, { preserveCategory = false, ignoreHistory = false } = {}) {
   const assistant = window.CafeRagAssistant;
-  const history = state.ragMessages.map((entry) => ({ role: entry.role, text: entry.text }));
+  const history = ignoreHistory ? [] : state.ragMessages.map((entry) => ({ role: entry.role, text: entry.text }));
   const requestId = ++state.ragRequestId;
   appendRagMessage("user", message);
   if (!assistant?.respond) {
@@ -1053,7 +1054,9 @@ function resetRagSession() {
 function submitRagMessage(event) {
   event.preventDefault();
   const preserveCategory = state.preserveCategoryOnNextRagSubmit;
+  const ignoreHistory = state.ignoreHistoryOnNextRagSubmit;
   state.preserveCategoryOnNextRagSubmit = false;
+  state.ignoreHistoryOnNextRagSubmit = false;
   if (state.ragSending) return;
   const input = $("#ragInput");
   const message = input.value.trim();
@@ -1062,7 +1065,7 @@ function submitRagMessage(event) {
   state.ragSending = true;
   $("#ragSendButton").disabled = true;
   try {
-    sendRagMessage(message, { preserveCategory });
+    sendRagMessage(message, { preserveCategory, ignoreHistory });
   } finally {
     state.ragSending = false;
     $("#ragSendButton").disabled = false;
@@ -1073,8 +1076,20 @@ function submitRagMessage(event) {
 function submitMenuSelection(itemId, { preserveCategory = false } = {}) {
   const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
   if (!item || state.ragSending) return;
+  state.ragPendingOrder = null;
   state.preserveCategoryOnNextRagSubmit = preserveCategory;
+  state.ignoreHistoryOnNextRagSubmit = true;
   $("#ragInput").value = itemName(item);
+  $("#ragForm").requestSubmit();
+}
+
+function submitMenuOrder(itemId, { preserveCategory = false } = {}) {
+  const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
+  if (!item || state.ragSending) return;
+  state.ragPendingOrder = null;
+  state.preserveCategoryOnNextRagSubmit = preserveCategory;
+  state.ignoreHistoryOnNextRagSubmit = false;
+  $("#ragInput").value = state.language === "en" ? `Order ${itemName(item)}` : `${itemName(item)} 주문할게`;
   $("#ragForm").requestSubmit();
 }
 
@@ -1150,9 +1165,31 @@ $("#categoryTabs").addEventListener("click", (event) => {
   renderMenu();
 });
 
+const menuSelectionClickTimers = new Map();
+
 $("#menuGrid").addEventListener("click", (event) => {
   const selectionButton = event.target.closest("[data-menu-selection-id]");
-  if (selectionButton) submitMenuSelection(selectionButton.dataset.menuSelectionId, { preserveCategory: true });
+  if (!selectionButton) return;
+  const itemId = selectionButton.dataset.menuSelectionId;
+  const pendingTimer = menuSelectionClickTimers.get(itemId);
+
+  if (event.detail >= 2) {
+    if (pendingTimer) window.clearTimeout(pendingTimer);
+    menuSelectionClickTimers.delete(itemId);
+    submitMenuOrder(itemId, { preserveCategory: true });
+    return;
+  }
+
+  if (event.detail === 0) {
+    submitMenuSelection(itemId, { preserveCategory: true });
+    return;
+  }
+
+  if (pendingTimer) window.clearTimeout(pendingTimer);
+  menuSelectionClickTimers.set(itemId, window.setTimeout(() => {
+    menuSelectionClickTimers.delete(itemId);
+    submitMenuSelection(itemId, { preserveCategory: true });
+  }, 250));
 });
 
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
@@ -1247,7 +1284,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=52").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=53").catch(console.error));
 
 renderCart();
 applyLanguage();
