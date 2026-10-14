@@ -145,6 +145,10 @@ test("주문 의사 뒤의 모든 판매 메뉴를 각각의 옵션 단계로 �
   ];
   menu.items.filter((item) => item.available !== false).forEach((item) => {
     const result = assistant.respond({ message: item.name, items: menu.items, options: menu.options, cart: [], history });
+    if (["financier", "cheesecake"].includes(item.id)) {
+      assert.equal(result.action.type, "add", item.name);
+      return;
+    }
     assert.equal(result.intent, "clarify", item.name);
     assert.equal(result.action.type, "pending", item.name);
     assert.equal(result.action.itemId, item.id, item.name);
@@ -275,11 +279,66 @@ test("한 문장의 추가와 삭제를 순서가 있는 배치 액션으로 만
   ]);
 });
 
-test("복합 액션의 미완성 옵션을 보존한 뒤 한 번에 확정한다", () => {
+test("복합 액션은 가능한 삭제를 즉시 적용하고 미완성 추가만 보존한다", () => {
   const first = assistant.respond({ message: "아메리카노 두 잔 담고 카페 라테 한 잔 빼줘", items, options: groupedOptions, cart: [] });
-  assert.equal(first.action.type, "pending_batch");
-  const second = assistant.respond({ message: "아이스 레귤러", items, options: groupedOptions, cart: [], pendingOrder: first.action });
+  assert.equal(first.action.type, "batch");
+  assert.equal(first.action.actions[0].op, "remove");
+  assert.equal(first.pendingOrder.type, "pending_batch");
+  const second = assistant.respond({ message: "아이스 레귤러", items, options: groupedOptions, cart: [], pendingOrder: first.pendingOrder });
   assert.equal(second.action.type, "batch");
   assert.deepEqual(second.action.actions[0].optionIds, ["temp-ice", "size-regular"]);
-  assert.equal(second.action.actions[1].op, "remove");
+  assert.equal(second.action.actions.length, 1); // Already applied removals must not replay.
+});
+
+test("뜨아 톨 사이즈 별칭을 핫 아메리카노로 인식한다 (피드백 #37)", () => {
+  const result = assistant.respond({ message: "뜨아 톨 사이즈 하나 담아줘", items, options: groupedOptions, cart: [] });
+  assert.equal(result.intent, "order");
+  assert.equal(result.action.itemId, "americano");
+  assert.deepEqual(result.action.optionIds, ["temp-hot", "size-regular"]);
+});
+
+test("아메리카노 중 사이즈 가격을 레귤러 가격으로 안내한다 (피드백 #37)", () => {
+  const result = assistant.respond({ message: "아메리카노 중 사이즈 얼마인가요?", items, options: groupedOptions, cart: [] });
+  assert.equal(result.intent, "price");
+  assert.match(result.answer, /3,500원/);
+});
+
+test("그린티라떼 질문을 말차 라테로 정확히 검색한다 (피드백 1-1)", () => {
+  const rows = assistant.retrieveMenu(menu.items, "그린티라떼 있어요?");
+  assert.equal(rows[0].item.id, "matcha-latte");
+});
+
+test("당 없는 음료 추천 시 유자차를 배제하고 무당 음료만 추천한다 (피드백 #16)", () => {
+  const result = assistant.respond({ message: "당 없는 음료 추천해줘", items: menu.items, options: menu.options, cart: [] });
+  assert.equal(result.intent, "recommend");
+  assert.deepEqual(result.retrieved.map((item) => item.id).sort(), ["americano", "earl-grey"]);
+  assert.ok(result.retrieved.some((item) => item.id === "americano" || item.id === "earl-grey"));
+});
+
+test("진하기는 주관적 맛으로 구분하고 없는 샷·카페인 수치를 만들지 않는다 (피드백 #13)", () => {
+  const result = assistant.respond({ message: "아메리카노랑 카페 라테 중에 뭐가 더 진해요?", items, cart: [] });
+  assert.equal(result.intent, "compare");
+  assert.match(result.answer, /주관적인 맛/);
+  assert.match(result.answer, /함량 수치 정보 없음/);
+  assert.doesNotMatch(result.answer, /카페인은.*더 강합니다/);
+  assert.match(result.answer, /아메리카노/);
+});
+
+test("영어 주문 발화에 영어로 응답하고 옵션을 반영한다 (피드백 #33)", () => {
+  const result = assistant.respond({ message: "Can I get a hot latte, regular, with oat milk?", items: menu.items, options: menu.options, cart: [] });
+  assert.equal(result.intent, "order");
+  assert.equal(result.action.itemId, "cafe-latte");
+  assert.ok(result.action.optionIds.includes("temp-hot"));
+  assert.ok(result.action.optionIds.includes("size-regular"));
+  assert.ok(result.action.optionIds.includes("extra-oat"));
+  assert.match(result.answer, /Added/);
+});
+
+test("복합 주문은 실제 메뉴 데이터의 치즈케이크를 즉시 담고 음료만 보존한다 (피드백 #35)", () => {
+  const result = assistant.respond({ message: "아메리카노 큰거 하나랑 바스크 치즈케이크 하나 담아줘", items: menu.items, options: menu.options, cart: [] });
+  assert.equal(result.intent, "clarify");
+  assert.deepEqual(result.action.actions, [{ op: "add", itemId: "cheesecake", quantity: 1, optionIds: [] }]);
+  assert.equal(result.pendingOrder.itemId, "americano");
+  assert.deepEqual(result.pendingOrder.optionIds, ["size-large"]);
+  assert.deepEqual(result.pendingOrder.missingGroups, ["온도"]);
 });

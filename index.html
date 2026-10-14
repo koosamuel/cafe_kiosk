@@ -12,7 +12,7 @@
   <title>카페 키오스크 - 1조</title>
   <link rel="icon" href="./assets/featured-cafe.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=54" />
+  <link rel="stylesheet" href="./styles.css?v=65" />
 </head>
 <body>
   <a class="skip-link" href="#menuGrid">메뉴로 바로가기</a>
@@ -57,7 +57,7 @@
         </header>
 
         <div class="rag-statusbar">
-          <span><i aria-hidden="true"></i> Supabase 메뉴 연결</span>
+          <span id="ragMenuStatus">메뉴 준비 중</span>
           <button id="ragResetButton" type="button">대화·장바구니 초기화</button>
         </div>
 
@@ -68,14 +68,14 @@
           <button type="button" data-rag-prompt="장바구니 합계를 알려 줘" data-rag-prompt-en="Show my cart total">장바구니 확인</button>
         </div>
 
+        <div id="ragMessages" class="rag-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+
         <form id="ragForm" class="rag-form">
           <label for="ragInput" class="sr-only">메뉴 질문 또는 주문 요청</label>
           <textarea id="ragInput" rows="2" maxlength="300" placeholder="예: 아메리카노 두 잔 담아 줘" required></textarea>
           <button id="ragSendButton" class="primary-button" type="submit">보내기</button>
         </form>
-        <p class="rag-notice">검색·대화 로직은 브라우저에서 실행되며, 최종 가격과 주문은 Supabase가 다시 검증합니다.</p>
-
-        <div id="ragMessages" class="rag-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <p class="rag-notice">메뉴와 옵션을 확인한 뒤 주문을 접수해 주세요. 실제 카드 승인은 지원하지 않습니다.</p>
 
       </div>
     </section>
@@ -215,7 +215,7 @@
 
   <script src="./config.js?v=49" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="./rag-assistant.js?v=54" defer></script>
-  <script src="./app.js?v=54" defer></script>
+  <script src="./rag-assistant.js?v=65" defer></script>
+  <script src="./app.js?v=65" defer></script>
 </body>
 </html>

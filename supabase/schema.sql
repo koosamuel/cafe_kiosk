@@ -503,12 +503,12 @@ insert into public.menu_options (id, menu_item_id, group_name, name, price_delta
 select id || '-extra-oat', id, '추가', '오트 밀크', 700, 3 from public.menu_items where name like '%라테%' or id = 'flat-white'
 on conflict (id) do nothing;
 
--- 디저트 데우기 옵션
+-- 버터 크루아상만 데우기 선택 가능
 insert into public.menu_options (id, menu_item_id, group_name, name, price_delta, sort_order)
-select id || '-warm', id, '데우기', '따뜻하게', 0, 1 from public.menu_items where category_id = 'dessert'
+select id || '-warm', id, '데우기', '따뜻하게', 0, 1 from public.menu_items where category_id = 'dessert' and id = 'croissant'
 on conflict (id) do nothing;
 insert into public.menu_options (id, menu_item_id, group_name, name, price_delta, sort_order)
-select id || '-plain', id, '데우기', '그대로', 0, 2 from public.menu_items where category_id = 'dessert'
+select id || '-plain', id, '데우기', '그대로', 0, 2 from public.menu_items where category_id = 'dessert' and id = 'croissant'
 on conflict (id) do nothing;
 
 do $$

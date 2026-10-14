@@ -16,9 +16,9 @@
     { "id": "lemon-ade", "category_id": "noncoffee", "name": "레몬 에이드", "description": "상큼한 레몬과 청량한 탄산", "price": 4900, "badge": "ICE", "available": true },
     { "id": "earl-grey", "category_id": "tea", "name": "얼그레이 티", "description": "베르가못 향이 산뜻한 홍차", "price": 4000, "badge": "", "available": true },
     { "id": "citron-tea", "category_id": "tea", "name": "유자차", "description": "달콤한 유자 과육을 담은 따뜻한 차", "price": 4300, "badge": "", "available": true },
-    { "id": "croissant", "category_id": "dessert", "name": "버터 크루아상", "description": "겹겹이 바삭하고 고소한 페이스트리", "price": 3800, "badge": "BEST", "available": true },
-    { "id": "financier", "category_id": "dessert", "name": "솔티드 휘낭시에", "description": "갈색 버터 향과 소금의 은은한 조화", "price": 3200, "badge": "", "available": true },
-    { "id": "cheesecake", "category_id": "dessert", "name": "바스크 치즈케이크", "description": "짙고 크리미한 치즈 풍미", "price": 5900, "badge": "추천", "available": true }
+    { "id": "croissant", "category_id": "dessert", "name": "버터 크루아상", "description": "겹겹이 바삭하고 고소한 페이스트리", "price": 3800, "badge": "BEST", "available": true, "can_be_warmed": true },
+    { "id": "financier", "category_id": "dessert", "name": "솔티드 휘낭시에", "description": "갈색 버터 향과 소금의 은은한 조화", "price": 3200, "badge": "", "available": true, "can_be_warmed": false },
+    { "id": "cheesecake", "category_id": "dessert", "name": "바스크 치즈케이크", "description": "짙고 크리미한 치즈 풍미", "price": 5900, "badge": "추천", "available": true, "can_be_warmed": false }
   ],
   "options": [
     { "id": "temp-hot", "menu_item_id": "*drink", "group_name": "온도", "name": "HOT", "price_delta": 0, "sort_order": 1 },
