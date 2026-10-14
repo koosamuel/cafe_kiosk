@@ -455,6 +455,7 @@ function openOptions(itemId, cartEntryKey = null) {
   $("#optionQuantity").textContent = state.optionQuantity;
 
   const groups = groupOptions(item);
+  const defaultOptionIds = new Set(defaultOptionsFor(item).map((option) => option.id));
   $("#optionGroups").innerHTML = Object.entries(groups).map(([groupName, options]) => {
     const isMultiple = groupName === "추가";
     return `
@@ -464,7 +465,7 @@ function openOptions(itemId, cartEntryKey = null) {
           ${options.map((option, index) => {
             const selected = cartEntry
               ? cartEntry.options.some((entryOption) => entryOption.id === option.id)
-              : !isMultiple && index === 0;
+              : defaultOptionIds.has(option.id);
             return `
             <label class="option-choice">
               <input type="${isMultiple ? "checkbox" : "radio"}" name="option-${escapeHtml(groupName)}"
@@ -526,9 +527,24 @@ function addItemToCart(item, options, quantity = 1) {
 
 function defaultOptionsFor(item) {
   const groups = groupOptions(item);
+  const preferredOptionIds = {
+    "온도": "temp-hot",
+    "크기": "size-regular",
+    "데우기": "plain-dessert",
+  };
+  const preferredOptionNames = {
+    "온도": "hot",
+    "크기": "regular",
+    "데우기": "그대로",
+  };
+  const defaultGroupOrder = ["온도", "크기", "데우기"];
   return Object.entries(groups)
     .filter(([name]) => name !== "추가")
-    .map(([, options]) => options[0])
+    .sort(([left], [right]) => defaultGroupOrder.indexOf(left) - defaultGroupOrder.indexOf(right))
+    .map(([name, options]) => options.find((option) => (
+      option.id === preferredOptionIds[name]
+      || String(option.name).toLocaleLowerCase() === preferredOptionNames[name]
+    )) || options[0])
     .filter(Boolean);
 }
 
@@ -1083,14 +1099,26 @@ function submitMenuSelection(itemId, { preserveCategory = false } = {}) {
   $("#ragForm").requestSubmit();
 }
 
-function submitMenuOrder(itemId, { preserveCategory = false } = {}) {
+function addMenuWithDefaults(itemId, { preserveCategory = false } = {}) {
   const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
   if (!item || state.ragSending) return;
   state.ragPendingOrder = null;
-  state.preserveCategoryOnNextRagSubmit = preserveCategory;
-  state.ignoreHistoryOnNextRagSubmit = false;
-  $("#ragInput").value = state.language === "en" ? `Order ${itemName(item)}` : `${itemName(item)} 주문할게`;
-  $("#ragForm").requestSubmit();
+  state.ragRequestId += 1;
+  const selectedOptions = defaultOptionsFor(item);
+  addItemToCart(item, selectedOptions, 1);
+  state.ragFocusedMenuIds = [item.id];
+  state.ragFocusLevel = "strong";
+  if (!preserveCategory) state.category = item.category_id;
+  renderCategories();
+  renderMenu();
+
+  const optionSummary = selectedOptions.map(optionName).join(" · ") || tr("기본", "Default");
+  appendRagMessage("user", state.language === "en" ? `Order ${itemName(item)}` : `${itemName(item)} 주문할게`);
+  appendRagMessage("assistant", tr(
+    `${item.name} 메뉴를 기본 옵션(${optionSummary})으로 주문 내역에 담았습니다. 주문 내역에서 옵션을 변경할 수 있어요.`,
+    `${itemName(item)} was added with the default options (${optionSummary}). You can change them in My Order.`,
+  ), [item]);
+  toast(tr(`${item.name} 메뉴를 기본 옵션으로 담았습니다.`, `${itemName(item)} added with default options.`));
 }
 
 function registerWebMcpTools() {
@@ -1173,12 +1201,14 @@ $("#menuGrid").addEventListener("click", (event) => {
   const itemId = selectionButton.dataset.menuSelectionId;
   const pendingTimer = menuSelectionClickTimers.get(itemId);
 
-  if (event.detail >= 2) {
+  if (event.detail === 2) {
     if (pendingTimer) window.clearTimeout(pendingTimer);
     menuSelectionClickTimers.delete(itemId);
-    submitMenuOrder(itemId, { preserveCategory: true });
+    addMenuWithDefaults(itemId, { preserveCategory: true });
     return;
   }
+
+  if (event.detail > 2) return;
 
   if (event.detail === 0) {
     submitMenuSelection(itemId, { preserveCategory: true });
@@ -1284,7 +1314,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=53").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=54").catch(console.error));
 
 renderCart();
 applyLanguage();

@@ -60,11 +60,26 @@ test("메뉴 카드 선택은 이전 미완성 옵션 주문을 종료하고 새
   assert.match(app, /const history = ignoreHistory \? \[\] : state\.ragMessages/);
 });
 
-test("메뉴 카드는 한 번 클릭하면 정보를, 더블 클릭하면 해당 메뉴 주문을 전송한다", () => {
-  assert.match(app, /function submitMenuOrder\(itemId,[\s\S]*`\$\{itemName\(item\)\} 주문할게`/);
+test("메뉴 카드는 한 번 클릭하면 정보를, 더블 클릭하면 기본 옵션으로 주문 내역에 담는다", () => {
+  assert.match(app, /function addMenuWithDefaults\(itemId,[\s\S]*addItemToCart\(item, selectedOptions, 1\)/);
+  assert.match(app, /appendRagMessage\("assistant", tr\([\s\S]*기본 옵션\([\s\S]*주문 내역에서 옵션을 변경할 수 있어요/);
   assert.match(app, /const menuSelectionClickTimers = new Map\(\);/);
-  assert.match(app, /if \(event\.detail >= 2\) \{[\s\S]*submitMenuOrder\(itemId, \{ preserveCategory: true \}\);/);
+  assert.match(app, /if \(event\.detail === 2\) \{[\s\S]*addMenuWithDefaults\(itemId, \{ preserveCategory: true \}\);/);
+  assert.match(app, /if \(event\.detail > 2\) return;/);
   assert.match(app, /window\.setTimeout\(\(\) => \{[\s\S]*submitMenuSelection\(itemId, \{ preserveCategory: true \}\);[\s\S]*\}, 250\)/);
+});
+
+test("기본 옵션은 음료 HOT·Regular, 푸드 그대로이며 추가 옵션은 선택하지 않는다", () => {
+  assert.match(app, /"온도": "temp-hot"/);
+  assert.match(app, /"크기": "size-regular"/);
+  assert.match(app, /"데우기": "plain-dessert"/);
+  assert.match(app, /"데우기": "그대로"/);
+  assert.match(app, /String\(option\.name\)\.toLocaleLowerCase\(\) === preferredOptionNames\[name\]/);
+  assert.match(app, /\.filter\(\(\[name\]\) => name !== "추가"\)/);
+  assert.match(app, /const defaultGroupOrder = \["온도", "크기", "데우기"\]/);
+  assert.match(app, /\.sort\(\(\[left\], \[right\]\) => defaultGroupOrder\.indexOf\(left\) - defaultGroupOrder\.indexOf\(right\)\)/);
+  assert.match(app, /const defaultOptionIds = new Set\(defaultOptionsFor\(item\)\.map/);
+  assert.match(app, /: defaultOptionIds\.has\(option\.id\)/);
 });
 
 test("사용자 메시지는 노란 배경과 진한 글자로 주문 도우미 답변과 구분한다", () => {
@@ -129,11 +144,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=53/);
-  assert.match(html, /app\.js\?v=53/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=53"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v53"/);
-  assert.match(serviceWorker, /app\.js\?v=53/);
+  assert.match(html, /styles\.css\?v=54/);
+  assert.match(html, /app\.js\?v=54/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=54"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v54"/);
+  assert.match(serviceWorker, /app\.js\?v=54/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
