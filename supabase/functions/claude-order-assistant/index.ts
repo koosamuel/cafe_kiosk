@@ -24,7 +24,8 @@ const MAX_REQUESTS_PER_WINDOW = 12;
 const requestTimes = new Map<string, number[]>();
 
 function json(body: Record<string, unknown>, status: number, origin: string) {
-  return new Response(JSON.stringify(body), {
+  // A 204 response must not include a body in the Edge Runtime.
+  return new Response(status === 204 ? null : JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
