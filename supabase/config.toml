@@ -17,3 +17,7 @@ enabled = true
 site_url = "http://127.0.0.1:8000"
 additional_redirect_urls = ["http://localhost:8000"]
 
+# The kiosk is an anonymous public demo. The function enforces its own origin,
+# request-size, and per-instance rate limits before it calls Anthropic.
+[functions.claude-order-assistant]
+verify_jwt = false

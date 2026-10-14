@@ -933,6 +933,7 @@ function appendRagMessage(role, text, retrieved = [], menuAction = "info") {
   }
   if (role === "user") turn.classList.add("pending");
   messages.scrollTop = messages.scrollHeight;
+  return article;
 }
 
 function openRagAssistant() {
@@ -992,6 +993,44 @@ function applyRagAction(result) {
   return answer;
 }
 
+function shouldUseClaudeAssistant(result) {
+  const config = window.CAFE_CONFIG || {};
+  const informationalIntent = ["recommend", "compare", "inform", "price"].includes(result.intent);
+  return config.CLAUDE_ASSISTANT_ENABLED === true
+    && Boolean(config.CLAUDE_FUNCTION_NAME)
+    && Boolean(db?.functions?.invoke)
+    && informationalIntent
+    && !result.action;
+}
+
+async function requestClaudeAnswer({ message, history, result, language }) {
+  const contextMenus = (result.retrieved || []).slice(0, 4).map((item) => ({
+    id: item.id,
+    name: itemName(item),
+    description: itemDescription(item),
+    price: Number(item.price || 0),
+  }));
+  try {
+    const { data, error } = await db.functions.invoke(CONFIG.CLAUDE_FUNCTION_NAME, {
+      body: {
+        message: String(message).slice(0, 320),
+        language,
+        intent: result.intent,
+        baseAnswer: String(result.answer || "").slice(0, 1200),
+        history: history.slice(-6).map((entry) => ({ role: entry.role, text: String(entry.text || "").slice(0, 240) })),
+        menus: contextMenus,
+      },
+    });
+    if (error) throw error;
+    const answer = typeof data?.answer === "string" ? data.answer.trim() : "";
+    return answer && answer.length <= 1400 ? answer : null;
+  } catch (error) {
+    // A model outage must never block the deterministic menu and order flow.
+    console.warn("Claude assistant fallback", error);
+    return null;
+  }
+}
+
 function sendRagMessage(message, { preserveCategory = false, ignoreHistory = false } = {}) {
   const assistant = window.CafeRagAssistant;
   const history = ignoreHistory ? [] : state.ragMessages.map((entry) => ({ role: entry.role, text: entry.text }));
@@ -1017,7 +1056,18 @@ function sendRagMessage(message, { preserveCategory = false, ignoreHistory = fal
   const answer = appliedAnswer;
   synchronizeRagUi(result, message, requestId, { preserveCategory });
   const menuAction = ["recommend", "compare", "inform", "price"].includes(result.intent) ? "order" : result.action ? "none" : "info";
-  appendRagMessage("assistant", answer, result.retrieved || [], menuAction);
+  const assistantArticle = appendRagMessage("assistant", answer, result.retrieved || [], menuAction);
+
+  // Show the deterministic result immediately, then replace only an informational
+  // answer when Claude returns. Ordering remains fully local/server-validated.
+  if (shouldUseClaudeAssistant(result)) {
+    void requestClaudeAnswer({ message, history, result, language: state.language }).then((claudeAnswer) => {
+      if (!claudeAnswer || requestId !== state.ragRequestId) return;
+      const latest = state.ragMessages.at(-1);
+      if (latest?.role === "assistant") latest.text = claudeAnswer;
+      assistantArticle?.querySelector("p")?.replaceChildren(claudeAnswer);
+    });
+  }
 }
 
 function resetRagSession() {

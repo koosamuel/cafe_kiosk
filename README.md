@@ -17,6 +17,9 @@ Supabase
 ├─ Demo RPC: 공용 번호로 최근 활성 주문만 조회·상태 전환
 ├─ RPC: 서버 검증 가격 계산과 주문 생성
 └─ Realtime: 운영자 주문판 갱신
+          ↓
+Supabase Edge Function (선택)
+└─ Claude API: 추천·비교·메뉴 정보 답변 보강
 ```
 
 클라이언트가 전송한 가격은 신뢰하지 않습니다. `create_kiosk_order` 함수가 활성 메뉴와 옵션 가격을 데이터베이스에서 다시 조회해 총액을 계산합니다. 각 주문에는 클라이언트가 생성한 `request_id`가 포함되며, 같은 요청이 재전송되면 서버가 기존 주문을 반환해 중복 주문을 방지합니다.
@@ -68,7 +71,7 @@ npm run check
 
 기존 `ai-applications-assignments-koo/rag-kiosk`의 메뉴 문서 검색, 추천·비교·주문 의도 구분, 메뉴 ID·수량 검증 원칙을 현재 키오스크 화면과 장바구니에 맞게 통합했습니다. 브라우저의 `rag-assistant.js`는 현재 Supabase 메뉴만 검색하며, 자연어에서 온도·크기·추가 옵션과 수량을 읽어 현재 옵션 목록으로 검증한 뒤 장바구니에 반영합니다. 짧은 후속 답변은 최근 사용자 문맥을 사용하고, 식사 페어링은 실제 판매 중인 메뉴만 추천합니다.
 
-교수님 원본의 Claude 호출은 서버 전용 기능이므로 정적 GitHub Pages 클라이언트에 API 키나 호출 코드를 넣지 않았습니다. 향후 생성형 답변이 필요하면 Supabase Edge Function 또는 별도 Worker에서 비밀 키를 관리하고, 서버가 반환한 메뉴 ID·옵션·가격을 다시 검증해야 합니다. 세부 대응 관계는 `PARK_RAG_INTEGRATION.md`를 참고합니다.
+Claude 호출은 `supabase/functions/claude-order-assistant/`의 서버 전용 Edge Function에서 처리합니다. 정적 GitHub Pages 클라이언트에는 API 키를 넣지 않습니다. Claude는 추천·비교·메뉴 정보의 문장 답변만 보강하고, 메뉴·옵션·수량의 주문 액션은 기존 규칙 엔진이 처리합니다. 최종 가격·가용 메뉴·주문 생성은 계속 Supabase RPC가 검증합니다. 세부 대응 관계는 `PARK_RAG_INTEGRATION.md`를 참고합니다.
 
 HTI·UX·UI 통합 기준, 현재 구현 범위와 162개 카탈로그·219문서 RAG 확장 계획은 `03_구현계획.md`를 참고합니다.
 
@@ -91,6 +94,19 @@ window.CAFE_CONFIG = {
 ```
 
 Publishable Key는 RLS를 전제로 브라우저에서 사용하는 공개 식별자입니다. 데이터베이스 비밀번호, Secret Key, `service_role` 키는 `config.js`나 GitHub 저장소에 넣지 않습니다.
+
+### Claude API 연결
+
+Claude API 키는 저장소의 텍스트 파일이나 `config.js`에 넣지 않고, Supabase Edge Function Secret으로만 등록합니다. 모델 이름도 서버 Secret으로 관리합니다.
+
+```bash
+supabase secrets set --project-ref YOUR_PROJECT_REF \
+  ANTHROPIC_API_KEY='YOUR_KEY' \
+  ANTHROPIC_MODEL='YOUR_AVAILABLE_CLAUDE_MODEL'
+supabase functions deploy claude-order-assistant --project-ref YOUR_PROJECT_REF
+```
+
+공개 키오스크이므로 함수는 GitHub Pages와 로컬 개발 주소만 CORS로 허용하고, 요청 길이와 인스턴스별 요청 빈도를 제한합니다. 이 제한은 데모 보호 장치이므로 실제 공개 운영에서는 사용자 인증 또는 CAPTCHA 기반 제한을 추가해야 합니다.
 
 공용 운영 번호는 발표 데모 편의를 위한 공유 잠금장치일 뿐 사용자별 인증이 아닙니다. RPC는 최근 24시간 활성 주문과 순차 상태 전환만 허용하지만, 번호를 아는 누구나 주문 상태를 바꿀 수 있으므로 실제 매장 운영에는 사용하지 않습니다.
 
