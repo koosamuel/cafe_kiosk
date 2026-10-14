@@ -998,7 +998,7 @@ function shouldUseClaudeAssistant(result) {
   const informationalIntent = ["recommend", "compare", "inform", "price"].includes(result.intent);
   return config.CLAUDE_ASSISTANT_ENABLED === true
     && Boolean(config.CLAUDE_FUNCTION_NAME)
-    && Boolean(db?.functions?.invoke)
+    && Boolean(config.SUPABASE_URL)
     && informationalIntent
     && !result.action;
 }
@@ -1011,17 +1011,21 @@ async function requestClaudeAnswer({ message, history, result, language }) {
     price: Number(item.price || 0),
   }));
   try {
-    const { data, error } = await db.functions.invoke(CONFIG.CLAUDE_FUNCTION_NAME, {
-      body: {
+    const baseUrl = String(CONFIG.SUPABASE_URL).replace(/\/$/, "");
+    const response = await fetch(`${baseUrl}/functions/v1/${encodeURIComponent(CONFIG.CLAUDE_FUNCTION_NAME)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
         message: String(message).slice(0, 320),
         language,
         intent: result.intent,
         baseAnswer: String(result.answer || "").slice(0, 1200),
         history: history.slice(-6).map((entry) => ({ role: entry.role, text: String(entry.text || "").slice(0, 240) })),
         menus: contextMenus,
-      },
+      }),
     });
-    if (error) throw error;
+    if (!response.ok) throw new Error(`Claude function request failed: ${response.status}`);
+    const data = await response.json();
     const answer = typeof data?.answer === "string" ? data.answer.trim() : "";
     return answer && answer.length <= 1400 ? answer : null;
   } catch (error) {

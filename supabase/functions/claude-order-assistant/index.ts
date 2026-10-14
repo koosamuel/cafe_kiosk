@@ -102,8 +102,9 @@ Deno.serve(async (request) => {
   const input = normalizeRequest(requestBody);
   if (!input.message || !input.baseAnswer) return json({ error: "invalid_request" }, 400, origin);
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  const model = Deno.env.get("ANTHROPIC_MODEL");
+  // Secrets copied from notes can include an invisible BOM or a trailing newline.
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY")?.trim();
+  const model = Deno.env.get("ANTHROPIC_MODEL")?.trim();
   if (!apiKey || !model) return json({ error: "assistant_not_configured" }, 503, origin);
 
   const context = JSON.stringify({
@@ -124,7 +125,6 @@ Deno.serve(async (request) => {
       body: JSON.stringify({
         model,
         max_tokens: 320,
-        temperature: 0.2,
         system: systemPrompt(input.language),
         messages: [{ role: "user", content: context }],
       }),
