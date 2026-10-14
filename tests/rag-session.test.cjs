@@ -446,3 +446,34 @@ test("아이스 톨 아메리카노와 휘낭시에 복합 주문은 데우기 �
   assert.deepEqual(ids(s.state.cart.find(row => row.item.id === "financier")), []);
   assert.equal(s.state.cart.reduce((sum, row) => sum + row.quantity * row.unitPrice, 0), 6700);
 });
+
+
+test("첫 메뉴판 정보 조회 뒤 응답 카드는 설명 반복 대신 옵션 주문을 시작한다", () => {
+  const s = session();
+  s.state.ragMessages = [];
+  s.state.ragRequestId = 0;
+  const messages = [];
+  s.context.appendRagMessage = (role, text, retrieved, menuAction) => {
+    s.state.ragMessages.push({ role, text });
+    messages.push({ role, text, retrieved, menuAction });
+  };
+  s.context.itemName = item => item.name;
+  s.context.itemDescription = item => item.description;
+  s.context.tr = ko => ko;
+  s.context.synchronizeRagUi = () => {};
+  vm.runInContext(source.slice(source.indexOf("function sendRagMessage("), source.indexOf("function resetRagSession(")), s.context);
+  vm.runInContext(source.slice(source.indexOf("function submitMenuSelection("), source.indexOf("function addMenuWithDefaults(")), s.context);
+  s.context.$("#ragForm").requestSubmit = () => s.context.sendRagMessage(s.context.$("#ragInput").value);
+  s.context.submitMenuSelection("cafe-latte", { preserveCategory: true });
+  assert.equal(s.state.cart.length, 0);
+  assert.equal(s.state.ragPendingOrder, null);
+  assert.equal(messages.at(-1).menuAction, "order");
+  const card = { dataset: { ragMenuId: "cafe-latte", ragMenuAction: messages.at(-1).menuAction } };
+  s.context.handleRagMenuClick({ target: { closest: selector => selector === "[data-rag-menu-id]" ? card : null } });
+  assert.equal(s.state.ragPendingOrder.itemId, "cafe-latte");
+  s.context.sendRagMessage("아이스 레귤러");
+  assert.equal(s.state.cart.length, 1);
+  assert.equal(s.state.cart[0].quantity, 1);
+  assert.equal(s.state.cart[0].unitPrice, 4300);
+  assert.equal(messages.at(-1).menuAction, "none");
+});

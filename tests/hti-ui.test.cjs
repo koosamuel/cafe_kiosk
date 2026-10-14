@@ -43,7 +43,7 @@ test("추천 카드는 주문을 시작하고 정보 카드는 메뉴명을 조�
   assert.match(app, /function submitMenuSelection\(itemId, \{ preserveCategory = false, order = false \} = \{\}\)/);
   assert.match(app, /candidate\.id === itemId && candidate\.available !== false/);
   assert.match(app, /order \? tr\(`/);
-  assert.match(app, /\["recommend", "compare"\]\.includes\(result\.intent\) \? "order" : result\.action \? "none" : "info"/);
+  assert.match(app, /\["recommend", "compare", "inform", "price"\]\.includes\(result\.intent\) \? "order" : result\.action \? "none" : "info"/);
   assert.match(app, /\$\("#ragForm"\)\.requestSubmit\(\)/);
   assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
 });
@@ -144,11 +144,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=63/);
-  assert.match(html, /app\.js\?v=63/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=63"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v63"/);
-  assert.match(serviceWorker, /app\.js\?v=63/);
+  assert.match(html, /styles\.css\?v=64/);
+  assert.match(html, /app\.js\?v=64/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=64"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v64"/);
+  assert.match(serviceWorker, /app\.js\?v=64/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {

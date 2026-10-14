@@ -1016,7 +1016,7 @@ function sendRagMessage(message, { preserveCategory = false, ignoreHistory = fal
   const appliedAnswer = applyRagAction(result);
   const answer = appliedAnswer;
   synchronizeRagUi(result, message, requestId, { preserveCategory });
-  const menuAction = ["recommend", "compare"].includes(result.intent) ? "order" : result.action ? "none" : "info";
+  const menuAction = ["recommend", "compare", "inform", "price"].includes(result.intent) ? "order" : result.action ? "none" : "info";
   appendRagMessage("assistant", answer, result.retrieved || [], menuAction);
 }
 
@@ -1295,7 +1295,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=63").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=64").catch(console.error));
 
 renderCart();
 applyLanguage();
