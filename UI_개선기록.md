@@ -1,7 +1,6 @@
 # UI 개선 시안 v63
 
-- 브랜치: `codex/ui-polish`
-- 기준: `feature/hti-feedback`의 로컬 커밋 `b10786c`
+- 브랜치: `feature/hti-feedback`
 - GitHub 푸시·병합·공개 배포 없음. 서버 DB 변경 없음.
 
 ## 변경
