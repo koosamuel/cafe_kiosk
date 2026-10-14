@@ -519,7 +519,8 @@
     }
 
     if (itemRows.length) {
-      const target = itemRows[0];
+      const namedItems = explicitlyNamedItems(items, text);
+      const target = namedItems.length === 1 ? namedItems[0] : itemRows[0];
       const requested = requestedOptionIds(text, options.filter((option) => optionApplies(option, target)));
       if (intent === "price" && requested.length) {
         const selected = options.filter((option) => requested.includes(option.id));
@@ -529,7 +530,7 @@
       return {
         intent: intent === "price" ? "price" : "inform",
         answer: intent === "price" ? `${target.name}의 기본 가격은 ${won(target.price)}입니다.` : menuSentence(target),
-        retrieved: itemRows.slice(0, 3),
+        retrieved: namedItems.length === 1 ? [target] : itemRows.slice(0, 3),
       };
     }
 

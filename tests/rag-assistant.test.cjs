@@ -43,6 +43,14 @@ test("명시된 두 메뉴를 비교한다", () => {
   assert.deepEqual(result.retrieved.map((item) => item.id), ["americano", "cafe-latte"]);
 });
 
+test("정확한 메뉴명 조회는 해당 메뉴 하나만 반환한다", () => {
+  menu.items.filter((item) => item.available !== false).forEach((item) => {
+    const result = assistant.respond({ message: item.name, items: menu.items, options: menu.options, cart: [] });
+    assert.equal(result.intent, "inform", item.name);
+    assert.deepEqual(result.retrieved.map((row) => row.id), [item.id], item.name);
+  });
+});
+
 test("카페인이 적은 메뉴를 추천한다", () => {
   const result = assistant.respond({ message: "카페인이 적은 메뉴 추천해 줘", items, cart: [] });
   assert.equal(result.intent, "recommend");
