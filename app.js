@@ -37,6 +37,7 @@ const state = {
   ragPendingOrder: null,
   ragFocusedMenuIds: [],
   ragFocusLevel: "medium",
+  preserveCategoryOnNextRagSubmit: false,
   ragRequestId: 0,
   ragSending: false,
   pendingOrder: null,
@@ -810,7 +811,7 @@ function ragFocusLevel(result) {
   return "medium";
 }
 
-function synchronizeRagUi(result, message, requestId) {
+function synchronizeRagUi(result, message, requestId, { preserveCategory = false } = {}) {
   if (requestId !== state.ragRequestId) return;
   const validItems = [...new Map((result.retrieved || [])
     .map((row) => state.items.find((item) => item.id === row.id && item.available !== false))
@@ -823,8 +824,10 @@ function synchronizeRagUi(result, message, requestId) {
     return;
   }
 
-  const categories = [...new Set(validItems.map((item) => item.category_id))];
-  state.category = categories.length === 1 ? categories[0] : "all";
+  if (!preserveCategory) {
+    const categories = [...new Set(validItems.map((item) => item.category_id))];
+    state.category = categories.length === 1 ? categories[0] : "all";
+  }
   state.ragFocusedMenuIds = validItems.map((item) => item.id);
   state.ragFocusLevel = ragFocusLevel(result);
   renderCategories();
@@ -1010,7 +1013,7 @@ function englishAssistantAnswer(result) {
   return "I can help with menu recommendations, prices, comparisons, and cart requests.";
 }
 
-function sendRagMessage(message) {
+function sendRagMessage(message, { preserveCategory = false } = {}) {
   const assistant = window.CafeRagAssistant;
   const history = state.ragMessages.map((entry) => ({ role: entry.role, text: entry.text }));
   const requestId = ++state.ragRequestId;
@@ -1030,7 +1033,7 @@ function sendRagMessage(message) {
   if (requestId !== state.ragRequestId) return;
   const appliedAnswer = applyRagAction(result);
   const answer = state.language === "en" ? englishAssistantAnswer(result) : appliedAnswer;
-  synchronizeRagUi(result, message, requestId);
+  synchronizeRagUi(result, message, requestId, { preserveCategory });
   appendRagMessage("assistant", answer, result.retrieved || []);
 }
 
@@ -1049,6 +1052,8 @@ function resetRagSession() {
 
 function submitRagMessage(event) {
   event.preventDefault();
+  const preserveCategory = state.preserveCategoryOnNextRagSubmit;
+  state.preserveCategoryOnNextRagSubmit = false;
   if (state.ragSending) return;
   const input = $("#ragInput");
   const message = input.value.trim();
@@ -1057,7 +1062,7 @@ function submitRagMessage(event) {
   state.ragSending = true;
   $("#ragSendButton").disabled = true;
   try {
-    sendRagMessage(message);
+    sendRagMessage(message, { preserveCategory });
   } finally {
     state.ragSending = false;
     $("#ragSendButton").disabled = false;
@@ -1065,9 +1070,10 @@ function submitRagMessage(event) {
   }
 }
 
-function submitMenuSelection(itemId) {
+function submitMenuSelection(itemId, { preserveCategory = false } = {}) {
   const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
   if (!item || state.ragSending) return;
+  state.preserveCategoryOnNextRagSubmit = preserveCategory;
   $("#ragInput").value = itemName(item);
   $("#ragForm").requestSubmit();
 }
@@ -1146,7 +1152,7 @@ $("#categoryTabs").addEventListener("click", (event) => {
 
 $("#menuGrid").addEventListener("click", (event) => {
   const selectionButton = event.target.closest("[data-menu-selection-id]");
-  if (selectionButton) submitMenuSelection(selectionButton.dataset.menuSelectionId);
+  if (selectionButton) submitMenuSelection(selectionButton.dataset.menuSelectionId, { preserveCategory: true });
 });
 
 $$(`[data-order-type]`).forEach((button) => button.addEventListener("click", () => {
@@ -1241,7 +1247,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=51").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=52").catch(console.error));
 
 renderCart();
 applyLanguage();

@@ -1,10 +1,10 @@
-const CACHE_NAME = "morning-brew-v51";
+const CACHE_NAME = "morning-brew-v52";
 const LOCAL_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=51",
-  "./app.js?v=51",
-  "./rag-assistant.js?v=51",
+  "./styles.css?v=52",
+  "./app.js?v=52",
+  "./rag-assistant.js?v=52",
   "./config.js?v=49",
   "./team-feedback.json",
   "./menu.json",

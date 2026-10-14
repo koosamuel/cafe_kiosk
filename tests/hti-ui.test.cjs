@@ -40,12 +40,19 @@ test("유효한 메뉴 ID만 화면 동기화하고 카드에 노랑·그린·�
 });
 
 test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명만 전송한다", () => {
-  assert.match(app, /function submitMenuSelection\(itemId\)/);
+  assert.match(app, /function submitMenuSelection\(itemId, \{ preserveCategory = false \} = \{\}\)/);
   assert.match(app, /candidate\.id === itemId && candidate\.available !== false/);
   assert.match(app, /\$\("#ragInput"\)\.value = itemName\(item\)/);
   assert.doesNotMatch(app, /\$\("#ragInput"\)\.value = tr\(`\$\{item\.name\} 주문할게`/);
   assert.match(app, /\$\("#ragForm"\)\.requestSubmit\(\)/);
   assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
+});
+
+test("메인 메뉴 클릭은 현재 카테고리를 유지하고 대화 결과 클릭은 기존 동기화를 사용한다", () => {
+  assert.match(app, /function synchronizeRagUi\(result, message, requestId, \{ preserveCategory = false \} = \{\}\)/);
+  assert.match(app, /if \(!preserveCategory\) \{[\s\S]*state\.category = categories\.length === 1 \? categories\[0\] : "all";/);
+  assert.match(app, /submitMenuSelection\(selectionButton\.dataset\.menuSelectionId, \{ preserveCategory: true \}\)/);
+  assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId\)/);
 });
 
 test("사용자 메시지는 노란 배경과 진한 글자로 주문 도우미 답변과 구분한다", () => {
@@ -110,11 +117,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=51/);
-  assert.match(html, /app\.js\?v=51/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=51"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v51"/);
-  assert.match(serviceWorker, /app\.js\?v=51/);
+  assert.match(html, /styles\.css\?v=52/);
+  assert.match(html, /app\.js\?v=52/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=52"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v52"/);
+  assert.match(serviceWorker, /app\.js\?v=52/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
@@ -156,7 +163,7 @@ test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 메�
   assert.match(css, /\.menu-card-image \{[^}]*width: min\(100%, 210px\)/);
   assert.match(css, /\.menu-card-copy \{[^}]*align-items: center;[^}]*text-align: center;/);
   assert.doesNotMatch(app, /function prefillRagInput\(itemId\)/);
-  assert.match(app, /submitMenuSelection\(selectionButton\.dataset\.menuSelectionId\)/);
+  assert.match(app, /submitMenuSelection\(selectionButton\.dataset\.menuSelectionId, \{ preserveCategory: true \}\)/);
   assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId\)/);
 });
 
