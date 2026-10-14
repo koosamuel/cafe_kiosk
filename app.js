@@ -162,6 +162,8 @@ function setConnection(message, mode = "") {
   };
   element.textContent = state.language === "en" ? english[message] || message : message;
   element.className = `connection-status ${mode}`.trim();
+  const assistantStatus = $("#ragMenuStatus");
+  if (assistantStatus) assistantStatus.textContent = element.textContent;
 }
 
 function toast(message) {
@@ -1293,7 +1295,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=62").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=63").catch(console.error));
 
 renderCart();
 applyLanguage();
