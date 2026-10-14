@@ -39,11 +39,11 @@ test("유효한 메뉴 ID만 화면 동기화하고 카드에 노랑·그린·�
   assert.match(css, /\.menu-card\.rag-focus-strong \{ border-color: var\(--highlight-red\);/);
 });
 
-test("인라인 주문 도우미의 근거 메뉴 클릭은 메뉴명만 전송한다", () => {
-  assert.match(app, /function submitMenuSelection\(itemId, \{ preserveCategory = false \} = \{\}\)/);
+test("추천 카드는 주문을 시작하고 정보 카드는 메뉴명을 조회한다", () => {
+  assert.match(app, /function submitMenuSelection\(itemId, \{ preserveCategory = false, order = false \} = \{\}\)/);
   assert.match(app, /candidate\.id === itemId && candidate\.available !== false/);
-  assert.match(app, /\$\("#ragInput"\)\.value = itemName\(item\)/);
-  assert.doesNotMatch(app, /\$\("#ragInput"\)\.value = tr\(`\$\{item\.name\} 주문할게`/);
+  assert.match(app, /order \? tr\(`/);
+  assert.match(app, /\["recommend", "compare"\]\.includes\(result\.intent\) \? "order" : result\.action \? "none" : "info"/);
   assert.match(app, /\$\("#ragForm"\)\.requestSubmit\(\)/);
   assert.doesNotMatch(app, /openOptions\(button\.dataset\.ragMenuId\)/);
 });
@@ -52,7 +52,7 @@ test("메인 메뉴 클릭은 현재 카테고리를 유지하고 대화 결과 
   assert.match(app, /function synchronizeRagUi\(result, message, requestId, \{ preserveCategory = false \} = \{\}\)/);
   assert.match(app, /if \(!preserveCategory\) \{[\s\S]*state\.category = categories\.length === 1 \? categories\[0\] : "all";/);
   assert.match(app, /submitMenuSelection\(itemId, \{ preserveCategory: true \}\)/);
-  assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId\)/);
+  assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId, \{ order: button\.dataset\.ragMenuAction === "order" \}\)/);
 });
 
 test("메뉴 카드 선택은 이전 미완성 옵션 주문을 종료하고 새 메뉴로 전환한다", () => {
@@ -117,8 +117,8 @@ test("주문 내역의 메뉴를 누르면 기존 옵션과 수량을 불러와 
 });
 
 test("복합 장바구니 액션은 모든 항목을 순서대로 적용한다", () => {
-  assert.match(app, /result\.action\.type === "batch"/);
-  assert.match(app, /result\.action\.actions\.forEach/);
+  assert.match(app, /action\.type === "batch"/);
+  assert.match(app, /CafeRagAssistant\.applyCartActions/);
   assert.match(app, /현재 합계/);
 });
 
@@ -144,11 +144,11 @@ test("전체화면 종료는 브라우저별 API와 실패 감지를 제공한�
 });
 
 test("서비스워커와 정적 자산은 같은 배포 캐시 버전을 사용한다", () => {
-  assert.match(html, /styles\.css\?v=54/);
-  assert.match(html, /app\.js\?v=54/);
-  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=54"\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v54"/);
-  assert.match(serviceWorker, /app\.js\?v=54/);
+  assert.match(html, /styles\.css\?v=62/);
+  assert.match(html, /app\.js\?v=62/);
+  assert.match(app, /serviceWorker\.register\("\.\/sw\.js\?v=62"\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "morning-brew-v62"/);
+  assert.match(serviceWorker, /app\.js\?v=62/);
 });
 
 test("데모 운영판은 이메일 없이 미리 입력된 공용 번호만 사용한다", () => {
@@ -165,7 +165,7 @@ test("데스크톱 화면은 메뉴·주문 도우미·주문 내역 순서이�
   assert.ok(html.indexOf('class="assistant-panel') < html.indexOf('class="cart-panel"'));
   assert.ok(html.indexOf('class="page-tabs header-page-tabs"') < html.indexOf('id="fullscreenButton"'));
   assert.ok(html.indexOf('id="cartTitle"') < html.indexOf('class="order-type cart-order-type"'));
-  assert.match(css, /\.assistant-panel \{[^}]*height: calc\(100dvh - 156px\)/);
+  assert.match(css, /\.assistant-panel \{[^}]*height: calc\(100dvh - 120px\)/);
   assert.match(css, /\.cart-panel \{[\s\S]*height: calc\(100dvh - 156px\)/);
 });
 
@@ -191,7 +191,7 @@ test("메뉴 카드는 이미지·이름·가격만 표시하고 클릭 시 메�
   assert.match(css, /\.menu-card-copy \{[^}]*align-items: center;[^}]*text-align: center;/);
   assert.doesNotMatch(app, /function prefillRagInput\(itemId\)/);
   assert.match(app, /submitMenuSelection\(itemId, \{ preserveCategory: true \}\)/);
-  assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId\)/);
+  assert.match(app, /submitMenuSelection\(button\.dataset\.ragMenuId, \{ order: button\.dataset\.ragMenuAction === "order" \}\)/);
 });
 
 test("12개 주문 메뉴와 공식 316개 카탈로그 감사를 구분한다", () => {

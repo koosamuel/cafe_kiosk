@@ -42,6 +42,7 @@ const state = {
   ragRequestId: 0,
   ragSending: false,
   pendingOrder: null,
+  orderSubmitting: false,
   connectionMessage: "메뉴 준비 중",
   connectionMode: "",
   teamFeedback: [],
@@ -101,7 +102,7 @@ const staticTranslations = [
   ["#ragResetButton", "대화·장바구니 초기화", "Reset Chat & Cart"],
   ["[data-rag-prompt]:nth-child(1)", "식사 페어링", "Food Pairing"], ["[data-rag-prompt]:nth-child(2)", "메뉴 비교", "Compare"],
   ["[data-rag-prompt]:nth-child(3)", "옵션 주문", "Custom Order"], ["[data-rag-prompt]:nth-child(4)", "장바구니 확인", "View Cart"],
-  ["#ragSendButton", "보내기", "Send"], [".rag-notice", "검색·대화 로직은 브라우저에서 실행되며, 최종 가격과 주문은 Supabase가 다시 검증합니다.", "Search and chat run in your browser. Supabase verifies final prices and orders."],
+  ["#ragSendButton", "보내기", "Send"], [".rag-notice", "메뉴와 옵션을 확인한 뒤 주문을 접수해 주세요. 실제 카드 승인은 지원하지 않습니다.", "Review your items and options before ordering. Card authorization is not supported."],
   ["#cartTitle", "주문 내역", "My Order"], [".cart-summary > div:nth-child(1) span", "상품 금액", "Subtotal"],
   [".cart-summary > div:nth-child(2) span", "할인", "Discount"], [".cart-total span", "결제 예정 금액", "Total"],
   [".cart-summary > div:nth-child(2) strong", "0원", "₩0"],
@@ -427,6 +428,7 @@ function isLatte(item) {
 
 function applicableOptions(item) {
   return state.options.filter((option) => {
+    if (!window.CafeRagAssistant.optionApplies(option, item)) return false;
     if (option.menu_item_id === item.id) return true;
     if (option.menu_item_id === "*drink") return isDrink(item);
     if (option.menu_item_id === "*coffee") return item.category_id === "coffee";
@@ -607,7 +609,7 @@ function openCheckout() {
     <div class="grand-total"><span>${tr("결제 예정 금액", "Total")}</span><strong>${won(cartTotal())}</strong></div>`;
   $("#orderConsent").checked = false;
   $("#checkoutError").textContent = "";
-  $("#checkoutDialog").showModal();
+  if (!$("#checkoutDialog").open) $("#checkoutDialog").showModal();
 }
 
 function orderPayload() {
@@ -662,8 +664,9 @@ function orderErrorMessage(error) {
   return "주문을 접수하지 못했습니다. 잠시 후 다시 시도하거나 직원에게 문의해 주세요.";
 }
 
-async function placeOrder(event) {
+async function placeOrder(event, { conversational = false, language = state.language } = {}) {
   event?.preventDefault();
+  if (state.orderSubmitting) return;
   if (!state.cart.length) return;
   const consent = $("#orderConsent");
   if (event && !consent.checked) {
@@ -672,6 +675,7 @@ async function placeOrder(event) {
   }
   const button = $("#placeOrderButton");
   const paymentMethod = $("input[name='paymentMethod']:checked")?.value || "card";
+  state.orderSubmitting = true;
   button.disabled = true;
   button.textContent = tr("주문을 접수하는 중…", "Placing order…");
   $("#checkoutError").textContent = "";
@@ -680,11 +684,20 @@ async function placeOrder(event) {
     state.pendingOrder = null;
     $("#orderNumber").textContent = result.order_number || result.pickup_code || "확인";
     $("#checkoutDialog").close();
+    state.ragPendingOrder = null;
+    state.cart = [];
+    renderCart();
     $("#successDialog").showModal();
+    if (conversational) appendRagMessage("assistant", language === "en"
+      ? `Order received. Order number: ${result.order_number}. Total: ₩${Number(result.total_amount).toLocaleString("en-US")}.`
+      : `주문이 접수되었습니다. 주문번호 ${result.order_number}, 최종 금액 ${won(result.total_amount)}입니다.`);
   } catch (error) {
     console.error(error);
     $("#checkoutError").textContent = orderErrorMessage(error);
+    state.ragPendingOrder = { type: "reviewing", signature: window.CafeRagAssistant.cartSignature(state.cart, state.orderType) };
+    if (conversational) appendRagMessage("assistant", language === "en" ? "Order submission failed. Your cart is preserved. Say yes to retry or cancel." : "주문 접수에 실패했습니다. 주문 내역은 유지됩니다. 네로 재시도하거나 취소해 주세요.");
   } finally {
+    state.orderSubmitting = false;
     button.disabled = false;
     button.textContent = tr("주문 접수하기", "Place Order");
   }
@@ -738,7 +751,7 @@ async function loadStaffOrders() {
   if (state.staffDemo || !db) {
     if (!state.staffOrders.length) {
       state.staffOrders = [
-        { id: "demo-1", order_number: "204", order_type: "takeout", payment_method: "card", status: "received", total_amount: 8100, created_at: new Date().toISOString(), order_items: [{ item_name: "카페 라테", quantity: 1, option_summary: "ICE, Regular" }, { item_name: "솔티드 휘낭시에", quantity: 1, option_summary: "그대로" }] },
+        { id: "demo-1", order_number: "204", order_type: "takeout", payment_method: "card", status: "received", total_amount: 8100, created_at: new Date().toISOString(), order_items: [{ item_name: "카페 라테", quantity: 1, option_summary: "ICE, Regular" }, { item_name: "솔티드 휘낭시에", quantity: 1, option_summary: "" }] },
         { id: "demo-2", order_number: "203", order_type: "dine_in", payment_method: "counter", status: "preparing", total_amount: 5200, created_at: new Date(Date.now() - 240000).toISOString(), order_items: [{ item_name: "말차 라테", quantity: 1, option_summary: "HOT, Regular" }] },
       ];
     }
@@ -854,45 +867,70 @@ function synchronizeRagUi(result, message, requestId, { preserveCategory = false
     if (requestId !== state.ragRequestId) return;
     const card = $("#menuGrid .menu-card.rag-focused");
     if (!card) return;
+    const grid = $("#menuGrid");
+    // Highlighting a menu must not move the page away from the active conversation.
+    // Only scroll a menu grid when it has its own scrollable viewport.
+    if (!grid || grid.scrollHeight <= grid.clientHeight) return;
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    card.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+    grid.scrollTo({ top: grid.scrollTop + card.getBoundingClientRect().top - grid.getBoundingClientRect().top, behavior: reducedMotion ? "auto" : "smooth" });
   });
 }
 
-function appendRagMessage(role, text, retrieved = []) {
+function pendingOptionChoices() {
+  const pending = state.ragPendingOrder;
+  const current = pending?.type === "pending_many" ? pending.items[0]
+    : pending?.type === "pending_batch" ? pending.actions.find((action) => action.op === "add") : pending;
+  const item = state.items.find((candidate) => candidate.id === current?.itemId);
+  if (!item) return { itemId: null, group: "", choices: [] };
+  const groups = groupOptions(item);
+  const group = Object.keys(groups).find((name) => window.CafeRagAssistant.optionGroup({ group_name: name }) !== "extras"
+    && groups[name].length > 1 && !groups[name].some((option) => (current.optionIds || []).includes(option.id)));
+  return { itemId: item.id, group: group || "", choices: group ? groups[group] : [] };
+}
+
+function appendRagMessage(role, text, retrieved = [], menuAction = "info") {
   const message = { role, text, retrieved };
   state.ragMessages.push(message);
   state.ragMessages = state.ragMessages.slice(-12);
 
   const article = document.createElement("article");
   article.className = `rag-message ${role}`;
+  const pendingOptions = role === "assistant" ? pendingOptionChoices() : { choices: [] };
+  const cards = menuAction === "none" ? [] : pendingOptions.choices.length ? retrieved.filter((item) => item.id !== pendingOptions.itemId) : retrieved;
   article.innerHTML = `
     ${role === "assistant" ? `<span class="rag-message-label">${tr("주문 도우미", "Order Assistant")}</span>` : ""}
     <p>${escapeHtml(text)}</p>
-    ${retrieved.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${retrieved.map((item) => `
-      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr(`${item.name} 메뉴 보기`, `View ${itemName(item)}`))}">
-        <span>${escapeHtml(itemName(item))}</span><strong>${won(item.price)}</strong>
+    ${pendingOptions.choices.length ? `<div class="rag-option-choices" role="group" aria-label="${escapeHtml(tr("필수 옵션 선택", "Required options"))}">
+      <strong>${escapeHtml(optionGroupName(pendingOptions.group))}</strong>
+      ${pendingOptions.choices.map((option) => `<button type="button" data-rag-option-id="${escapeHtml(option.id)}">${escapeHtml(optionName(option))}${Number(option.price_delta || 0) ? ` (+${won(option.price_delta)})` : ""}</button>`).join("")}
+    </div>` : ""}
+    ${cards.length ? `<div class="rag-sources" aria-label="검색된 메뉴">${cards.map((item) => `
+      <button type="button" data-rag-menu-id="${escapeHtml(item.id)}" data-rag-menu-action="${menuAction}" aria-label="${escapeHtml(menuAction === "order" ? tr(`${item.name} 선택하고 주문하기`, `Select ${itemName(item)} to order`) : tr(`${item.name} 메뉴 보기`, `View ${itemName(item)}`))}">
+        <span>${escapeHtml(itemName(item))}${menuAction === "order" ? `<small>${tr("선택하고 주문하기", "Select to order")}</small>` : ""}</span><strong>${won(item.price)}</strong>
       </button>`).join("")}</div>` : ""}`;
   const messages = $("#ragMessages");
+  if (role === "assistant" && menuAction === "none" && !pendingOptions.choices.length) {
+    messages.querySelectorAll(".rag-sources, .rag-option-choices").forEach((controls) => controls.remove());
+  }
   let turn;
   if (role === "user") {
     turn = document.createElement("section");
     turn.className = "rag-turn";
     turn.setAttribute("aria-label", "질문과 답변");
     turn.append(article);
-    messages.prepend(turn);
+    messages.append(turn);
   } else {
     turn = messages.querySelector(".rag-turn.pending");
     if (!turn) {
       turn = document.createElement("section");
       turn.className = "rag-turn";
-      messages.prepend(turn);
+      messages.append(turn);
     }
     turn.append(article);
     turn.classList.remove("pending");
   }
   if (role === "user") turn.classList.add("pending");
-  messages.scrollTop = 0;
+  messages.scrollTop = messages.scrollHeight;
 }
 
 function openRagAssistant() {
@@ -903,131 +941,53 @@ function openRagAssistant() {
   window.setTimeout(() => $("#ragInput").focus(), 350);
 }
 
-function removeMenuFromCart(itemId, quantity) {
-  let remaining = Math.max(1, Number(quantity || 1));
-  let removed = 0;
-  for (const entry of state.cart) {
-    if (entry.item.id !== itemId || remaining < 1) continue;
-    const decrement = Math.min(entry.quantity, remaining);
-    entry.quantity -= decrement;
-    remaining -= decrement;
-    removed += decrement;
-  }
-  state.cart = state.cart.filter((entry) => entry.quantity > 0);
-  if (removed) {
-    renderCart();
-    announceCartChange(tr(`${removed}개를 장바구니에서 뺐습니다.`, `${removed} item${removed === 1 ? "" : "s"} removed from the cart.`));
-  }
-  return removed;
-}
-
-function ragOptionsFor(item, requestedIds = []) {
-  const requested = new Set(requestedIds);
-  const groups = groupOptions(item);
-  return Object.entries(groups).flatMap(([groupName, options]) => {
-    const selected = options.filter((option) => requested.has(option.id));
-    if (groupName === "추가") return selected;
-    return selected.length ? [selected[0]] : options.slice(0, 1);
-  });
-}
-
 function applyRagAction(result) {
+  if (result.replacePending) state.ragPendingOrder = null;
+  if (Object.prototype.hasOwnProperty.call(result, "pendingOrder")) state.ragPendingOrder = result.pendingOrder;
+  if (result.intent === "cancel_pending" && $("#checkoutDialog").open) $("#checkoutDialog").close();
   if (!result.action) return result.answer;
-
   if (["pending", "pending_many", "pending_batch"].includes(result.action.type)) {
-    state.ragPendingOrder = result.action;
+    state.ragPendingOrder = { ...result.action, language: result.language };
     return result.answer;
   }
-
   if (result.action.type === "checkout") {
-    state.ragPendingOrder = null;
-    openCheckout();
+    // The chat itself displays the review; a modal would block the spoken/text "yes" turn.
     return result.answer;
   }
-
+  if (result.action.type === "confirm_order") {
+    $("#orderConsent").checked = true;
+    void placeOrder(undefined, { conversational: true, language: result.language });
+    return result.answer;
+  }
   if (result.action.type === "clear") {
+    state.ragPendingOrder = null;
     state.cart = [];
     renderCart();
-    announceCartChange(tr("장바구니를 모두 비웠습니다.", "The cart has been cleared."));
-    toast("장바구니를 비웠습니다.");
+    announceCartChange(result.answer);
     return result.answer;
   }
-
-  if (result.action.type === "add_many") {
-    result.action.items.forEach((action) => {
-      const target = state.items.find((candidate) => candidate.id === action.itemId && candidate.available !== false);
-      if (target) addItemToCart(target, ragOptionsFor(target, action.optionIds || []), Number(action.quantity || 1));
-    });
-    state.ragPendingOrder = null;
-    toast("여러 메뉴를 장바구니에 담았습니다.");
-    return result.answer;
-  }
-
-  if (result.action.type === "batch") {
-    const changes = [];
-    result.action.actions.forEach((action) => {
-      const target = state.items.find((candidate) => candidate.id === action.itemId && candidate.available !== false);
-      if (!target) return;
-      if (action.op === "add") {
-        addItemToCart(target, ragOptionsFor(target, action.optionIds || []), Number(action.quantity || 1));
-        changes.push(`+ ${target.name} ${Number(action.quantity || 1)}개`);
-      }
-      if (action.op === "remove") {
-        const removed = removeMenuFromCart(target.id, action.quantity);
-        changes.push(removed ? `− ${target.name} ${removed}개` : `− ${target.name} 없음`);
-      }
-    });
-    state.ragPendingOrder = null;
-    const summary = `${changes.join(" · ")} · 현재 합계 ${won(cartTotal())}`;
-    announceCartChange(summary);
-    toast("요청한 장바구니 변경을 반영했습니다.");
-    return summary;
-  }
-
-  const item = state.items.find((candidate) => candidate.id === result.action.itemId && candidate.available !== false);
-  if (!item) return "현재 주문 가능한 메뉴를 찾지 못했습니다. 메뉴 목록을 다시 확인해 주세요.";
-
-  if (result.action.type === "add") {
-    const selectedOptions = ragOptionsFor(item, result.action.optionIds || []);
-    addItemToCart(item, selectedOptions, Number(result.action.quantity || 1));
-    const optionSummary = selectedOptions.map((option) => option.name).join(" · ");
-    toast(`${item.name}을(를) ${optionSummary || "기본 옵션"}으로 담았습니다.`);
-    state.ragPendingOrder = null;
-    return result.answer;
-  }
-
-  if (result.action.type === "remove") {
-    const removed = removeMenuFromCart(item.id, result.action.quantity);
-    if (!removed) return `${item.name}은(는) 현재 장바구니에 없습니다.`;
-    toast(`${item.name} ${removed}개를 장바구니에서 뺐습니다.`);
-    return `${item.name} ${removed}개를 장바구니에서 뺐습니다.`;
-  }
-  return result.answer;
-}
-
-function englishAssistantAnswer(result) {
-  const orderType = state.orderType === "dine_in" ? "Dine In" : "Takeout";
-  const items = result.retrieved || [];
-  if (result.intent === "order_type") return `Your current order type is ${orderType}. You can change it with the buttons at the top.`;
-  if (result.intent === "clear") return "Your cart has been cleared.";
-  if (result.intent === "cart") {
-    const count = state.cart.reduce((sum, entry) => sum + entry.quantity, 0);
-    return count ? `${orderType} order: ${count} item${count === 1 ? "" : "s"}, totaling ${won(cartTotal())}.` : `Your ${orderType.toLowerCase()} cart is empty.`;
-  }
-  if (result.intent === "order" && result.action) {
-    const item = state.items.find((candidate) => candidate.id === result.action.itemId);
-    return `${result.action.quantity || 1} ${item ? itemName(item) : "item"}${Number(result.action.quantity || 1) === 1 ? "" : "s"} added to your ${orderType.toLowerCase()} order.`;
-  }
-  if (result.intent === "remove" && result.action) {
-    const item = state.items.find((candidate) => candidate.id === result.action.itemId);
-    return `${item ? itemName(item) : "Item"} removed from your cart.`;
-  }
-  if (result.intent === "compare" && items.length >= 2) return `${itemName(items[0])}: ${itemDescription(items[0])}. ${itemName(items[1])}: ${itemDescription(items[1])}.`;
-  if (result.intent === "price" && items[0]) return `${itemName(items[0])} starts at ${won(items[0].price)}.`;
-  if (result.intent === "recommend" && items.length) return `I recommend ${items.slice(0, 3).map(itemName).join(", ")}. Select an item below to view its options.`;
-  if (result.intent === "inform" && items[0]) return `${itemName(items[0])} is ${won(items[0].price)}. ${itemDescription(items[0])}.`;
-  if (result.intent === "clarify") return "Please include the menu name or tell me what flavor, caffeine level, or price you prefer.";
-  return "I can help with menu recommendations, prices, comparisons, and cart requests.";
+  const action = result.action;
+  const actions = action.type === "batch" ? action.actions
+    : action.type === "add_many" ? action.items.map((row) => ({ op: "add", ...row }))
+      : [{ op: action.type, ...action }];
+  const applied = window.CafeRagAssistant.applyCartActions({ cart: state.cart, actions, items: state.items, options: state.options });
+  state.cart = applied.cart;
+  if (!Object.prototype.hasOwnProperty.call(result, "pendingOrder")) state.ragPendingOrder = null;
+  renderCart();
+  const english = result.language === "en";
+  const verbs = english ? { add: "Added", remove: "Removed", update: "Updated", set_qty: "Quantity updated" }
+    : { add: "담았습니다", remove: "뺐습니다", update: "수정했습니다", set_qty: "수량을 변경했습니다" };
+  const summary = applied.changes.map((row) => {
+    const item = state.items.find((candidate) => candidate.id === row.itemId);
+    const name = english ? itemEnglish[item.id]?.[0] || item.name : item.name;
+    return `${name} ×${row.quantity}: ${verbs[row.op]}`;
+  }).join(" · ");
+  const errors = applied.errors.length ? (english ? " Some changes could not be applied. Check the item, options, and quantity in your cart." : " 일부 요청을 적용하지 못했습니다. 주문 내역의 대상·옵션·수량을 확인해 주세요.") : "";
+  const total = english ? `Current total: ₩${applied.total.toLocaleString("en-US")}` : `현재 합계 ${won(applied.total)}`;
+  const question = state.ragPendingOrder ? ` ${result.answer}` : "";
+  const answer = `${summary || (english ? "No changes applied." : "변경된 항목이 없습니다.")} · ${total}${errors}${question}`;
+  announceCartChange(answer);
+  return answer;
 }
 
 function sendRagMessage(message, { preserveCategory = false, ignoreHistory = false } = {}) {
@@ -1044,14 +1004,18 @@ function sendRagMessage(message, { preserveCategory = false, ignoreHistory = fal
     return;
   }
 
-  const localizedItems = state.items.map((item) => ({ ...item, name: itemName(item), description: itemDescription(item) }));
-  const localizedOptions = state.options.map((option) => ({ ...option, name: optionName(option), group_name: optionGroupName(option.group_name) }));
+  const englishInput = state.language === "en" || (!/[가-힣]/u.test(message) && /[a-z]{2,}/iu.test(message));
+  const localizedItems = state.items.map((item) => ({ ...item,
+    name: englishInput ? itemEnglish[item.id]?.[0] || item.name : itemName(item),
+    description: englishInput ? itemEnglish[item.id]?.[1] || item.description : itemDescription(item) }));
+  const localizedOptions = state.options.map((option) => ({ ...option, name: englishInput ? optionEnglish[option.id] || option.name : optionName(option), group_name: option.group_name }));
   const result = assistant.respond({ message, items: localizedItems, options: localizedOptions, cart: state.cart, history, pendingOrder: state.ragPendingOrder, orderType: state.orderType, language: state.language });
   if (requestId !== state.ragRequestId) return;
   const appliedAnswer = applyRagAction(result);
-  const answer = state.language === "en" ? englishAssistantAnswer(result) : appliedAnswer;
+  const answer = appliedAnswer;
   synchronizeRagUi(result, message, requestId, { preserveCategory });
-  appendRagMessage("assistant", answer, result.retrieved || []);
+  const menuAction = ["recommend", "compare"].includes(result.intent) ? "order" : result.action ? "none" : "info";
+  appendRagMessage("assistant", answer, result.retrieved || [], menuAction);
 }
 
 function resetRagSession() {
@@ -1089,14 +1053,33 @@ function submitRagMessage(event) {
   }
 }
 
-function submitMenuSelection(itemId, { preserveCategory = false } = {}) {
+function submitMenuSelection(itemId, { preserveCategory = false, order = false } = {}) {
   const item = state.items.find((candidate) => candidate.id === itemId && candidate.available !== false);
   if (!item || state.ragSending) return;
+  const current = pendingOptionChoices();
+  if (order && current.itemId === itemId && current.choices.length) {
+    appendRagMessage("assistant", tr(`${item.name}의 ${optionGroupName(current.group)} 옵션을 선택해 주세요.`, `Please choose ${optionGroupName(current.group)} for ${itemName(item)}.`));
+    return;
+  }
   state.ragPendingOrder = null;
   state.preserveCategoryOnNextRagSubmit = preserveCategory;
   state.ignoreHistoryOnNextRagSubmit = true;
-  $("#ragInput").value = itemName(item);
+  $("#ragInput").value = order ? tr(`${item.name} 주문할게`, `Order ${itemName(item)}`) : itemName(item);
   $("#ragForm").requestSubmit();
+}
+
+function handleRagMenuClick(event) {
+  const optionButton = event.target.closest("[data-rag-option-id]");
+  if (optionButton) {
+    const option = pendingOptionChoices().choices.find((candidate) => candidate.id === optionButton.dataset.ragOptionId);
+    if (!option || state.ragSending) return;
+    const koreanReply = { hot: "핫", ice: "아이스", regular: "레귤러", large: "라지" }[String(option.name).toLowerCase()];
+    $("#ragInput").value = state.language === "ko" && koreanReply ? koreanReply : optionName(option);
+    $("#ragForm").requestSubmit();
+    return;
+  }
+  const button = event.target.closest("[data-rag-menu-id]");
+  if (button) submitMenuSelection(button.dataset.ragMenuId, { order: button.dataset.ragMenuAction === "order" });
 }
 
 function addMenuWithDefaults(itemId, { preserveCategory = false } = {}) {
@@ -1117,7 +1100,7 @@ function addMenuWithDefaults(itemId, { preserveCategory = false } = {}) {
   appendRagMessage("assistant", tr(
     `${item.name} 메뉴를 기본 옵션(${optionSummary})으로 주문 내역에 담았습니다. 주문 내역에서 옵션을 변경할 수 있어요.`,
     `${itemName(item)} was added with the default options (${optionSummary}). You can change them in My Order.`,
-  ), [item]);
+  ), [], "none");
   toast(tr(`${item.name} 메뉴를 기본 옵션으로 담았습니다.`, `${itemName(item)} added with default options.`));
 }
 
@@ -1280,11 +1263,7 @@ $(".rag-prompts").addEventListener("click", (event) => {
   $("#ragInput").value = state.language === "en" ? button.dataset.ragPromptEn : button.dataset.ragPrompt;
   $("#ragForm").requestSubmit();
 });
-$("#ragMessages").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-rag-menu-id]");
-  if (!button) return;
-  submitMenuSelection(button.dataset.ragMenuId);
-});
+$("#ragMessages").addEventListener("click", handleRagMenuClick);
 $("#staffOrders").addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");
   if (button) updateOrderStatus(button.dataset.orderId, button.dataset.nextStatus);
@@ -1314,7 +1293,7 @@ if (db) {
   db.channel("cafe-menu").on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, loadMenu).subscribe();
 }
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=54").catch(console.error));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=62").catch(console.error));
 
 renderCart();
 applyLanguage();

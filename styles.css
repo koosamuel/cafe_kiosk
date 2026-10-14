@@ -410,39 +410,44 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
 .close-button { position: absolute; top: 18px; right: 18px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 24px; cursor: pointer; }
 .rag-modal { width: min(760px, calc(100% - 28px)); padding: 0; overflow: hidden; }
 .rag-inline { width: 100%; margin: 0 0 28px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--paper); box-shadow: var(--shadow); font-size: 70%; }
-.assistant-panel { position: sticky; top: 100px; align-self: start; height: calc(100vh - 156px); height: calc(100dvh - 156px); max-height: calc(100vh - 156px); max-height: calc(100dvh - 156px); margin: 0; }
+.assistant-panel { position: sticky; top: 100px; align-self: start; height: calc(100vh - 120px); height: calc(100dvh - 120px); max-height: calc(100vh - 120px); max-height: calc(100dvh - 120px); margin: 0; }
 .rag-inline .rag-shell { height: 100%; max-height: none; }
-.rag-inline .rag-messages { min-height: 220px; max-height: none; }
+.rag-inline .rag-messages { min-height: 0; max-height: none; }
 .rag-inline .rag-heading h2 { font-size: 2.1em; }
 .rag-inline .rag-statusbar, .rag-inline .rag-statusbar button, .rag-inline .rag-prompts button, .rag-inline .rag-notice { font-size: 1em; }
-.rag-shell { display: grid; grid-template-rows: auto auto auto auto auto minmax(220px, 1fr) auto; max-height: min(88vh, 850px); }
-.rag-heading { position: relative; padding: 20px 28px; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, #fffdf8, #eef3ec); }
+.rag-shell { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; max-height: min(88vh, 850px); }
+.rag-heading { position: relative; padding: 12px 20px; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, #fffdf8, #eef3ec); }
 .rag-heading h2 { margin: 0; }
 .rag-heading p:last-child { margin: 0; color: var(--muted); line-height: 1.55; }
-.rag-statusbar { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-bottom: 1px solid var(--line); color: var(--muted); background: var(--paper); font-size: 12px; }
+.rag-statusbar { display: flex; min-height: 36px; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-bottom: 1px solid var(--line); color: var(--muted); background: var(--paper); font-size: 12px; }
 .rag-statusbar span { display: inline-flex; align-items: center; gap: 7px; font-weight: 750; }
 .rag-statusbar i { width: 8px; height: 8px; border-radius: 50%; background: #2f7a4f; box-shadow: 0 0 0 4px rgba(47,122,79,.12); }
 .rag-statusbar button { min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--sage); background: white; font-size: 11px; font-weight: 800; cursor: pointer; }
 .rag-statusbar button:hover { border-color: var(--sage); background: var(--sage-soft); }
-.rag-prompts { display: flex; gap: 8px; padding: 14px 20px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.rag-prompts { display: flex; gap: 8px; padding: 8px 16px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 .rag-prompts::-webkit-scrollbar { display: none; }
 .rag-prompts button { flex: 0 0 auto; min-height: 38px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--sage); background: var(--paper); font-size: 13px; font-weight: 750; cursor: pointer; }
 .rag-prompts button:hover { border-color: var(--sage); background: var(--sage-soft); }
-.rag-messages { display: flex; min-height: 280px; padding: 22px; overflow-y: auto; flex-direction: column; gap: 14px; background: var(--paper-2); }
+.rag-messages { display: flex; min-height: 0; padding: 18px; overflow-y: auto; overflow-anchor: none; overscroll-behavior: contain; flex-direction: column; gap: 14px; background: var(--paper-2); }
 .rag-turn { display: flex; flex: 0 0 auto; flex-direction: column; gap: 10px; }
 .rag-message { align-self: flex-start; width: fit-content; max-width: 82%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 4px 17px 17px; background: var(--paper); box-shadow: 0 5px 15px rgba(47,34,24,.06); }
 .rag-message.user { align-self: flex-end; border-color: var(--chat-user-yellow-border); border-radius: 17px 4px 17px 17px; color: var(--chat-user-ink); background: var(--chat-user-yellow); }
-.rag-message-label { display: block; margin-bottom: 5px; color: var(--terracotta); font-size: 11px; font-weight: 850; letter-spacing: .06em; }
-.rag-message p { margin: 0; line-height: 1.65; white-space: pre-line; }
+.rag-message-label { display: block; margin-bottom: 5px; color: var(--terracotta); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+.rag-message p { margin: 0; font-weight: 400; line-height: 1.65; white-space: pre-line; }
 .rag-sources { display: grid; gap: 7px; margin-top: 11px; }
 .rag-sources button { display: flex; width: 100%; min-height: 42px; align-items: center; justify-content: space-between; gap: 15px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: white; cursor: pointer; }
 .rag-sources button:hover { border-color: var(--sage); background: var(--sage-soft); }
-.rag-sources span { text-align: left; font-weight: 750; }
-.rag-sources strong { flex: 0 0 auto; color: var(--terracotta); }
-.rag-form { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; padding: 16px 20px 9px; background: var(--paper); }
-.rag-form textarea { min-height: 58px; max-height: 130px; padding: 13px 14px; resize: vertical; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: white; line-height: 1.5; }
-.rag-form .primary-button { min-height: 58px; }
-.rag-notice { margin: 0; padding: 0 20px 17px; color: var(--muted); background: var(--paper); font-size: 11px; }
+.rag-sources span { text-align: left; font-weight: 600; }
+.rag-sources strong { flex: 0 0 auto; color: var(--terracotta); font-weight: 600; }
+.rag-sources small { display: block; margin: 4px 0; color: var(--sage); font-weight: 600; }
+.rag-option-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.rag-option-choices > strong { flex-basis: 100%; font-weight: 600; }
+.rag-option-choices button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--sage); border-radius: 10px; background: var(--sage-soft); color: var(--espresso); font: inherit; font-weight: 600; cursor: pointer; }
+.rag-option-choices button:hover, .rag-option-choices button:focus-visible { background: var(--sage); color: white; outline: 2px solid var(--sage); outline-offset: 2px; }
+.rag-form { display: grid; grid-template-columns: minmax(0, 1fr) 80px; gap: 10px; padding: 10px 14px 8px; border-top: 1px solid var(--line); background: var(--paper); }
+.rag-form textarea { min-height: 48px; max-height: 130px; padding: 13px 14px; resize: vertical; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: white; line-height: 1.5; }
+.rag-form .primary-button { min-height: 48px; padding: 0 12px; font-weight: 600; white-space: nowrap; }
+.rag-notice { margin: 0; padding: 0 14px 8px; color: var(--muted); background: var(--paper); font-size: 11px; }
 .option-groups { display: grid; gap: 22px; margin: 28px 0; }
 .option-group { padding-top: 20px; border-top: 1px solid var(--line); }
 .option-group legend { margin-bottom: 12px; font-weight: 800; }
@@ -508,7 +513,7 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .header-page-tabs { margin-right: auto; }
   .connection-status { display: none; }
   .kiosk-shell { display: block; padding: 20px 16px 160px; }
-  .assistant-panel { position: static; height: auto; max-height: none; margin: 24px 0; }
+  .assistant-panel { position: static; height: 85vh; height: 85dvh; min-height: 560px; max-height: 900px; margin: 24px 0; }
   .welcome-row { align-items: start; flex-direction: column; }
   .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cart-panel {
@@ -566,10 +571,10 @@ h1 { margin-bottom: 8px; font-size: clamp(31px, 4vw, 50px); line-height: 1.12; l
   .modal { padding: 25px 20px; }
   .rag-modal { padding: 0; }
   .rag-heading { padding: 18px 20px; }
-  .rag-messages { min-height: 260px; padding: 16px; }
+  .rag-messages { min-height: 0; padding: 16px; }
   .rag-message { max-width: 92%; }
-  .rag-form { grid-template-columns: 1fr; padding: 13px 16px 8px; }
-  .rag-form .primary-button { min-height: 48px; }
+  .rag-form { grid-template-columns: minmax(0, 1fr) 72px; padding: 10px 12px 8px; }
+  .rag-form .primary-button { min-height: 48px; padding: 0 12px; font-weight: 600; white-space: nowrap; }
   .rag-notice { padding-inline: 16px; }
   .option-choice-grid, .payment-methods, .staff-orders { grid-template-columns: 1fr; }
   .cart-panel { grid-template-columns: .8fr 1.2fr; }
